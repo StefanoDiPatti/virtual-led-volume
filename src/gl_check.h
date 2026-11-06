@@ -29,3 +29,16 @@ inline void glCheckError(const char* call, const char* file, int line)
         err = glGetError();
     }
 }
+
+// Verify if uniform variable name is wrong or not used
+inline GLint glCheckUniformLocation(GLuint program, const char* uniformName)
+{
+    GLint res = glGetUniformLocation(program, uniformName);
+    
+    if(res == -1)
+    {
+        std::cerr << "uniform " << uniformName << " not found! Wrong name or unused in shader." << std::endl;
+    }
+    
+    return res;
+} 

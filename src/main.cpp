@@ -47,6 +47,28 @@ void SetupShader(Shader& shader);
 // delete Shader Programs when application ends
 void DeleteShader(Shader& shader);
 
+// ------- Materials and Lighting -------
+// Uniforms to pass to shaders
+// position of a pointlight
+glm::vec3 lightPos = glm::vec3(5.0f, 10.0f, 10.0f);
+//GLfloat lightColor[] = {1.0f,1.0f,1.0f};
+
+// diffusive, specular and ambient components
+GLfloat yodaMaterial[] = {1.0f,0.0f,0.0f};
+GLfloat specularColor[] = {1.0f,1.0f,1.0f};
+GLfloat ambientColor[] = {0.1f,0.1f,0.1f};
+// weights for the diffusive, specular and ambient components
+GLfloat Kd = 0.5f;
+GLfloat Ks = 0.4f;
+GLfloat Ka = 0.1f;
+// shininess coefficient for Blinn-Phong shaders
+GLfloat shininess = 25.0f;
+
+GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
+// variables used to store uniform location inside shaders
+GLint pointLightLocation, matDiffuseLocation, matAmbientLocation, matSpecularLocation;  
+GLint kdLocation, kaLocation, ksLocation, shineLocation;
+
 // callback function for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void fb_size_callback(GLFWwindow* window, int width, int height);
@@ -108,7 +130,7 @@ int main()
     Shader shader;
     SetupShader(shader);
 
-    // loaded models
+    // ------- Models -------
     Model planeModel("assets/models/plane.obj");
     Model yodaModel("assets/models/babyyoda.obj");
 
@@ -124,6 +146,17 @@ int main()
     glm::mat4 yodaModelMatrix = glm::mat4(1.0f);
     glm::mat3 yodaNormalMatrix = glm::mat3(1.0f);
 
+    // ------- Lighting -------
+    // we determine the position in the Shader Program of the uniform variables
+    pointLightLocation = glCheckUniformLocation(shader.Program, "pointLightPosition");
+    matDiffuseLocation = glCheckUniformLocation(shader.Program, "diffuseColor");
+    matAmbientLocation = glCheckUniformLocation(shader.Program, "ambientColor");
+    matSpecularLocation = glCheckUniformLocation(shader.Program, "specularColor");
+    kaLocation = glCheckUniformLocation(shader.Program, "Ka");
+    kdLocation = glCheckUniformLocation(shader.Program, "Kd");
+    ksLocation = glCheckUniformLocation(shader.Program, "Ks");
+    shineLocation = glCheckUniformLocation(shader.Program, "shininess");
+
     /////////////////// RENDERING LOOP ///////////////////////
     // this code is executed at each frame
     while(!glfwWindowShouldClose(window))
@@ -132,11 +165,20 @@ int main()
         glfwPollEvents();
 
         // "clear" the frame and z-buffer
-        GL_CHECK(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
         // usage of Shader Program as part of the current rendering process
         shader.Use();
+
+        // we assign the value to the uniform variables
+        GL_CHECK(glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos)));
+        GL_CHECK(glUniform3fv(matAmbientLocation, 1, ambientColor));
+        GL_CHECK(glUniform3fv(matSpecularLocation, 1, specularColor));
+        GL_CHECK(glUniform1f(kaLocation, Ka));
+        GL_CHECK(glUniform1f(kdLocation, Kd));
+        GL_CHECK(glUniform1f(ksLocation, Ks));
+        GL_CHECK(glUniform1f(shineLocation, shininess));
 
         // we pass projection and view matrices to the Shader Program
         GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
@@ -151,6 +193,8 @@ int main()
         GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix)));
         GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(planeNormalMatrix)));
 
+        GL_CHECK(glUniform3fv(matDiffuseLocation, 1, planeMaterial));
+
         // we render the plane
         planeModel.Draw();
 
@@ -163,6 +207,8 @@ int main()
         yodaNormalMatrix = glm::inverseTranspose(glm::mat3(view * yodaModelMatrix));
         GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(yodaModelMatrix)));
         GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(yodaNormalMatrix)));
+
+        GL_CHECK(glUniform3fv(matDiffuseLocation, 1, yodaMaterial));
 
         // we render yoda
         yodaModel.Draw();
