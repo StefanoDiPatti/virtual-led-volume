@@ -43,7 +43,7 @@ positive Z axis points "outside" the screen
 GLuint screenWidth = 1920, screenHeight = 1080;
 
 // setup of Shader Programs used in the application
-void SetupShader(Shader& shader);
+void SetupShader(Shader& shader, const char* vertexPath, const char* fragmentPath);
 // delete Shader Programs when application ends
 void DeleteShader(Shader& shader);
 
@@ -127,8 +127,9 @@ int main()
     GL_CHECK(glEnable(GL_DEPTH_TEST));
 
     // creation of the Shader Programs
-    Shader shader;
-    SetupShader(shader);
+    Shader shader, wallShader;
+    SetupShader(shader, "shaders/scene.vert", "shaders/scene.frag");
+    SetupShader(wallShader, "shaders/wall.vert", "shaders/wall.frag");
 
     // ------- Models -------
     Model planeModel("assets/models/plane.obj");
@@ -156,6 +157,48 @@ int main()
     kdLocation = glCheckUniformLocation(shader.Program, "Kd");
     ksLocation = glCheckUniformLocation(shader.Program, "Ks");
     shineLocation = glCheckUniformLocation(shader.Program, "shininess");
+
+    // ------- LED Wall --------
+    glm::mat4 wallModelMatrix = glm::mat4(1.0f);
+
+    // the LED wall quad: 4 corners in world coordinates (pd = pb + pc - pa)
+    GLfloat vertices[] =
+    {
+        -3.0f,  0.0f, -3.0f, 0.0f, 0.0f,         // pa: lower left
+        3.0f, 0.0f, -3.0f,  1.0f, 0.0f,          // pb: lower-right
+        -3.0f,  3.0f, -3.0f, 0.0f, 1.0f,    // pc: upper-left
+        3.0f,  3.0f, -3.0f,  1.0f, 1.0f     // pd: upper right
+    };
+    GLuint indices[] =
+    {
+        0, 1, 3,  // First Triangle (pa, pb, pd)
+        0, 3, 2   // Second Triangle (pa, pd, pc)
+    };
+
+    // ------- Buffer objects\arrays -------
+    GLuint wallVBO, wallVAO, wallEBO;
+    GL_CHECK(glGenVertexArrays(1, &wallVAO));
+    GL_CHECK(glGenBuffers(1, &wallVBO));
+    GL_CHECK(glGenBuffers(1, &wallEBO));
+    
+    // wallVAO is made "active"    
+    GL_CHECK(glBindVertexArray(wallVAO));
+    // we copy data in the wallVBO - we must set the data dimension, and the pointer to the structure cointaining the data
+    GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, wallVBO));
+    GL_CHECK(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
+    // we copy data in the wallEBO - we must set the data dimension, and the pointer to the structure cointaining the data
+    GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wallEBO));
+    GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
+
+    // vertex positions (location 0) and UVs (location 2)
+    GL_CHECK(glEnableVertexAttribArray(0));
+    GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0));
+
+    GL_CHECK(glEnableVertexAttribArray(2));
+    GL_CHECK(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat))));
+
+    GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GL_CHECK(glBindVertexArray(0)); // Unbind wallVAO
 
     /////////////////// RENDERING LOOP ///////////////////////
     // this code is executed at each frame
@@ -213,6 +256,19 @@ int main()
         // we render yoda
         yodaModel.Draw();
 
+        // -----------LED WALL-----------
+
+        wallShader.Use();
+
+        // we pass projection and view matrices to the Wall Shader
+        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(wallModelMatrix)));
+        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view)));
+        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+
+        GL_CHECK(glBindVertexArray(wallVAO));
+        GL_CHECK(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
+        GL_CHECK(glBindVertexArray(0));
+
         // double buffering: swapping back and front buffers
         glfwSwapBuffers(window);
     }
@@ -220,6 +276,11 @@ int main()
     // when I exit from the graphics loop, it is because the application is closing
     // we delete the Shader Programs
     DeleteShader(shader);
+    DeleteShader(wallShader);
+
+    glDeleteVertexArrays(1, &wallVAO);
+    glDeleteBuffers(1, &wallVBO);
+    glDeleteBuffers(1, &wallEBO);
 
     // close and delete context
     glfwTerminate();
@@ -227,9 +288,9 @@ int main()
 }
 
 /////////////////// SHADERS MANAGEMENT ///////////////////////
-void SetupShader(Shader& shader)
+void SetupShader(Shader& shader, const char* vertexPath, const char* fragmentPath)
 {
-    shader = Shader("shaders/scene.vert", "shaders/scene.frag");
+    shader = Shader(vertexPath, fragmentPath);
 }
 
 void DeleteShader(Shader& shader)
