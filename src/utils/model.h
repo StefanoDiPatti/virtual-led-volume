@@ -10,12 +10,6 @@ Model is a "move-only" class. A move-only class ensures that you always have a 1
 N.B. 2) no texturing in this version of the class
 
 N.B. 3) based on https://github.com/JoeyDeVries/LearnOpenGL/blob/master/includes/learnopengl/model.h
-
-authors: Davide Gadia, Michael Marchesan
-
-Real-Time Graphics Programming - a.a. 2025/2026
-Master degree in Computer Science
-Universita' degli Studi di Milano
 */
 
 

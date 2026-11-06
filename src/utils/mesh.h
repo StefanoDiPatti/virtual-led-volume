@@ -15,12 +15,6 @@ Moreover, we want to have, CPU-side, a Mesh instance, with associated GPU resour
 N.B. 2) no texturing in this version of the class
 
 N.B. 3) based on https://github.com/JoeyDeVries/LearnOpenGL/blob/master/includes/learnopengl/mesh.h
-
-authors: Davide Gadia, Michael Marchesan
-
-Real-Time Graphics Programming - a.a. 2025/2026
-Master degree in Computer Science
-Universita' degli Studi di Milano
 */
 
 #pragma once

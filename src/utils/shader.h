@@ -3,12 +3,6 @@ Shader class
 - loading Shader source code, Shader Program creation
 
 N.B. ) adaptation of https://github.com/JoeyDeVries/LearnOpenGL/blob/master/includes/learnopengl/shader.h
-
-author: Davide Gadia
-
-Real-Time Graphics Programming - a.a. 2025/2026
-Master degree in Computer Science
-Universita' degli Studi di Milano
 */
 
 #pragma once
@@ -28,6 +22,11 @@ public:
     GLuint Program;
 
     //////////////////////////////////////////
+
+    Shader()
+    {
+        Program = 0;
+    }
 
     //constructor
     Shader(const GLchar* vertexPath, const GLchar* fragmentPath)

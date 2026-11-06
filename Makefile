@@ -1,9 +1,5 @@
-# Makefile for RTGP project - Linux environment
+# Makefile for virtual-led-volume - Linux build
 # author: Stefano Di Patti
-# based on the lab Makefile by Davide Gadia
-# Real-Time Graphics Programming - a.a. 2025/2026
-# Master degree in Computer Science
-# Universita' degli Studi di Milano
 #
 
 # name of the file
