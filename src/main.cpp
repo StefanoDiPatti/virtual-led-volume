@@ -42,6 +42,9 @@ positive Z axis points "outside" the screen
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+// class to manage render-to-texture
+#include "framebuffer.h"
+
 // dimensions of application's window
 GLuint screenWidth = 1920, screenHeight = 1080;
 
@@ -213,6 +216,9 @@ int main()
     GLuint wallTexture = LoadTexture("assets/textures/UV_Grid_Sm.png");
     GLint textureLocation = glCheckUniformLocation(wallShader.Program, "wallTexture");
 
+    // off-screen target for the virtual environment 2:1 aspect like the 6x3m wall
+    RenderTarget wallTarget(2048, 1024);
+
     glm::mat4 wallModelMatrix = glm::mat4(1.0f);
 
     // the LED wall quad: 4 corners in world coordinates (pd = pb + pc - pa)
@@ -274,6 +280,17 @@ int main()
         apply_camera_movements();
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
+
+        // temporary FBO test: clear the target to magenta
+        wallTarget.Bind();
+        
+        GL_CHECK(glClearColor(1.0f, 0.0f, 1.0f, 1.0f));
+        GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+        
+        glfwGetFramebufferSize(window, &width, &height);
+
+        GL_CHECK(glViewport(0, 0, width, height));
 
         // "clear" the frame and z-buffer
         GL_CHECK(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
@@ -409,7 +426,7 @@ int main()
 
             // we activate the texture with id 0, and we bind the id to our loaded texture data
             GL_CHECK(glActiveTexture(GL_TEXTURE0));
-            GL_CHECK(glBindTexture(GL_TEXTURE_2D, wallTexture));
+            GL_CHECK(glBindTexture(GL_TEXTURE_2D, wallTarget.GetColorTexture()));
 
             GL_CHECK(glUniform1i(textureLocation, 0));
 
