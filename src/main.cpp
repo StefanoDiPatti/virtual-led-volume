@@ -18,6 +18,10 @@ positive Z axis points "outside" the screen
 // Std. Includes
 #include <string>
 
+// we include the library for images loading
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
+
 // Loader for OpenGL extensions
 #include <glad/glad.h>
 
@@ -27,11 +31,10 @@ positive Z axis points "outside" the screen
 // GLFW library to create window and to manage I/O
 #include <glfw/glfw3.h>
 
-// class to manage shaders 
-#include <utils/shader.h>
-
-// class to include models
-#include <utils/model.h>
+// Utils import
+#include <utils/shader.h>   // class to manage shaders 
+#include <utils/model.h>    // class to include models
+#include <utils/camera.h>   // class to include camera
 
 // Loader for GLM
 #include <glm/glm.hpp>
@@ -69,9 +72,31 @@ GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
 GLint pointLightLocation, matDiffuseLocation, matAmbientLocation, matSpecularLocation;  
 GLint kdLocation, kaLocation, ksLocation, shineLocation;
 
+// load image from disk and create an OpenGL texture
+GLuint LoadTexture(const char* path);
+
+// we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
+Camera camera(glm::vec3(0.0f, 1.7f, 6.0f), GL_TRUE);
+
+// we initialize an array of booleans for each keyboard key
+bool keys[1024];
+
+// we need to store the previous mouse position to calculate the offset with the current frame
+GLfloat lastX, lastY;
+
+// when rendering the first frame, we do not have a "previous state" for the mouse, so we need to manage this situation
+bool firstMouse = true;
+
+// parameters for time calculation
+GLfloat deltaTime = 0.0f;
+GLfloat lastFrame = 0.0f;
+GLfloat currentFrame = 0.0f;
+
 // callback function for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void fb_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void apply_camera_movements();
 
 /////////////////// MAIN function ///////////////////////
 int main()
@@ -105,6 +130,11 @@ int main()
     // relate window and the callbacks
     glfwSetKeyCallback(window, key_callback);
     glfwSetFramebufferSizeCallback(window, fb_size_callback);
+    
+    glfwSetCursorPosCallback(window, mouse_callback);
+
+    // we disable the mouse cursor
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // GLAD tries to load the context set by GLFW
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress))
@@ -138,8 +168,8 @@ int main()
     // we set projection and view matrices
     // Projection matrix: FOV angle, aspect ratio, near and far planes
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
-    // View matrix (=camera): position, view direction, camera "up" vector
-    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 1.7f, 6.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // View matrix: the camera moves, so we just set to identity now
+    glm::mat4 view = glm::mat4(1.0f);
 
     // Model and Normal transformation matrices for the objects in the scene
     glm::mat4 planeModelMatrix = glm::mat4(1.0f);
@@ -159,6 +189,11 @@ int main()
     shineLocation = glCheckUniformLocation(shader.Program, "shininess");
 
     // ------- LED Wall --------
+    
+    // we load the images and store them in a vector
+    GLuint wallTexture = LoadTexture("assets/textures/UV_Grid_Sm.png");
+    GLint textureLocation = glCheckUniformLocation(wallShader.Program, "wallTexture");
+
     glm::mat4 wallModelMatrix = glm::mat4(1.0f);
 
     // the LED wall quad: 4 corners in world coordinates (pd = pb + pc - pa)
@@ -204,11 +239,21 @@ int main()
     // this code is executed at each frame
     while(!glfwWindowShouldClose(window))
     {
+        // we determine the time passed from the beginning
+        // and we calculate time difference between current frame rendering and the previous one
+        currentFrame = glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         // Check if an I/O event is happening
         glfwPollEvents();
+        // we apply FPS camera movements
+        apply_camera_movements();
+        // View matrix (=camera): position, view direction, camera "up" vector
+        view = camera.GetViewMatrix();
 
         // "clear" the frame and z-buffer
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        GL_CHECK(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
         // usage of Shader Program as part of the current rendering process
@@ -260,6 +305,12 @@ int main()
 
         wallShader.Use();
 
+        // we activate the texture with id 0, and we bind the id to our loaded texture data
+        GL_CHECK(glActiveTexture(GL_TEXTURE0));
+        GL_CHECK(glBindTexture(GL_TEXTURE_2D, wallTexture));
+
+        GL_CHECK(glUniform1i(textureLocation, 0));
+
         // we pass projection and view matrices to the Wall Shader
         GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(wallModelMatrix)));
         GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view)));
@@ -278,13 +329,55 @@ int main()
     DeleteShader(shader);
     DeleteShader(wallShader);
 
-    glDeleteVertexArrays(1, &wallVAO);
-    glDeleteBuffers(1, &wallVBO);
-    glDeleteBuffers(1, &wallEBO);
+    GL_CHECK(glDeleteVertexArrays(1, &wallVAO));
+    GL_CHECK(glDeleteBuffers(1, &wallVBO));
+    GL_CHECK(glDeleteBuffers(1, &wallEBO));
+
+    GL_CHECK(glDeleteTextures(1, &wallTexture));
 
     // close and delete context
     glfwTerminate();
     return 0;
+}
+
+//////////////////////////////////////////
+// we load the image from disk and we create an OpenGL texture
+GLuint LoadTexture(const char* path)
+{
+    GLuint textureImage;
+    int w, h, channels;
+    unsigned char* image;
+    stbi_set_flip_vertically_on_load(true);
+    image = stbi_load(path, &w, &h, &channels, STBI_rgb);
+
+    if (image == nullptr)
+        std::cout << "Failed to load texture!" << std::endl;
+
+    GL_CHECK(glGenTextures(1, &textureImage));
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, textureImage));
+    
+    // 3 channels = RGB ; 4 channel = RGBA
+    if (channels==3)
+        GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image));
+    else if (channels==4)
+        GL_CHECK(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image));
+    
+    GL_CHECK(glGenerateMipmap(GL_TEXTURE_2D));
+    // we set how to consider UVs outside [0,1] range
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    // we set the filtering for minification and magnification
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+
+    // we free the memory once we have created an OpenGL texture
+    stbi_image_free(image);
+
+    // we set the binding to 0 once we have finished
+    GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+
+    return textureImage;
+
 }
 
 /////////////////// SHADERS MANAGEMENT ///////////////////////
@@ -304,9 +397,70 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // if ESC is pressed, close the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+
+    // we keep trace of the pressed keys
+    // with this method, we can manage 2 keys pressed at the same time:
+    // many I/O managers often consider only 1 key pressed at the time (the first pressed, until it is released)
+    // using a boolean array, we can then check and manage all the keys pressed at the same time
+    if(key < 0 || key >= 1024) 
+        return;
+
+    if(action == GLFW_PRESS)
+        keys[key] = true;
+    else if(action == GLFW_RELEASE)
+        keys[key] = false;
 }
 
 void fb_size_callback(GLFWwindow* window, int width, int height)
 {
     GL_CHECK(glViewport(0, 0, width, height));
+}
+
+//////////////////////////////////////////
+// If one of the WASD keys is pressed, the camera is moved accordingly (the code is in utils/camera.h)
+void apply_camera_movements()
+{
+    // if a single WASD key is pressed, then we will apply the full value of velocity v in the corresponding direction.
+    // However, if two keys are pressed together in order to move diagonally (W+D, W+A, S+D, S+A), 
+    // then the camera will apply a compensation factor to the velocities applied in the single directions, 
+    // in order to have the full v applied in the diagonal direction  
+    // the XOR on A and D is to avoid the application of a wrong attenuation in the case W+A+D or S+A+D are pressed together.  
+    GLboolean diagonal_movement = (keys[GLFW_KEY_W] ^ keys[GLFW_KEY_S]) && (keys[GLFW_KEY_A] ^ keys[GLFW_KEY_D]); 
+    camera.SetMovementCompensation(diagonal_movement);
+    
+    if(keys[GLFW_KEY_W])
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if(keys[GLFW_KEY_S])
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if(keys[GLFW_KEY_A])
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if(keys[GLFW_KEY_D])
+        camera.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+//////////////////////////////////////////
+// callback for mouse events
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+      // we move the camera view following the mouse cursor
+      // we calculate the offset of the mouse cursor from the position in the last frame
+      // when rendering the first frame, we do not have a "previous state" for the mouse, so we set the previous state equal to the initial values (thus, the offset will be = 0)
+      if(firstMouse)
+      {
+          lastX = xpos;
+          lastY = ypos;
+          firstMouse = false;
+      }
+
+      // offset of mouse cursor position
+      GLfloat xoffset = xpos - lastX;
+      GLfloat yoffset = lastY - ypos;
+
+      // the new position will be the previous one for the next frame
+      lastX = xpos;
+      lastY = ypos;
+
+      // we pass the offset to the Camera class instance in order to update the rendering
+      camera.ProcessMouseMovement(xoffset, yoffset);
+
 }

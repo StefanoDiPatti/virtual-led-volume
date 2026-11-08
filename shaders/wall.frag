@@ -3,11 +3,14 @@
 // output shader variable
 out vec4 colorFrag;
 
-// the transformed uv have been calculated per-vertex in the wall shader
+// the transformed uv interpolated by the rasterizer
 in vec2 vUV;
+
+// texture sampler
+uniform sampler2D wallTexture;
 
 /////////// MAIN //////////////////
 void main(void)
 {
-    colorFrag = vec4(vUV.x, vUV.y, 0.0, 1.0);
+    colorFrag = texture(wallTexture, vUV);
 }
