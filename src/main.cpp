@@ -68,12 +68,22 @@ GLfloat Ka = 0.1f;
 GLfloat shininess = 25.0f;
 
 GLfloat planeMaterial[] = {0.0f,0.5f,0.0f};
+GLfloat farPillarMaterial[] = {1.0f,1.0f,1.0f};
+GLfloat nearPillarMaterial[] = {1.0f,0.5f,0.0f};
+GLfloat sphereMaterial[] = {1.0f,1.0f,0.0f};
+
 // variables used to store uniform location inside shaders
 GLint pointLightLocation, matDiffuseLocation, matAmbientLocation, matSpecularLocation;  
 GLint kdLocation, kaLocation, ksLocation, shineLocation;
 
 // load image from disk and create an OpenGL texture
 GLuint LoadTexture(const char* path);
+
+// load the 6 images from disk and create an OpenGL cubemap
+GLuint LoadTextureCube(std::string path);
+
+// variable to manage transition from stage view to virtual view environment & viceversa
+bool showEnvironment = false;
 
 // we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
 Camera camera(glm::vec3(0.0f, 1.7f, 6.0f), GL_TRUE);
@@ -157,13 +167,16 @@ int main()
     GL_CHECK(glEnable(GL_DEPTH_TEST));
 
     // creation of the Shader Programs
-    Shader shader, wallShader;
+    Shader shader, wallShader, skyboxShader;
     SetupShader(shader, "shaders/scene.vert", "shaders/scene.frag");
     SetupShader(wallShader, "shaders/wall.vert", "shaders/wall.frag");
+    SetupShader(skyboxShader, "shaders/skybox.vert", "shaders/skybox.frag");
 
     // ------- Models -------
     Model planeModel("assets/models/plane.obj");
     Model yodaModel("assets/models/babyyoda.obj");
+    Model cubeModel("assets/models/cube.obj");
+    Model sphereModel("assets/models/sphere.obj");
 
     // we set projection and view matrices
     // Projection matrix: FOV angle, aspect ratio, near and far planes
@@ -176,6 +189,12 @@ int main()
     glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
     glm::mat4 yodaModelMatrix = glm::mat4(1.0f);
     glm::mat3 yodaNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 farPillarModelMatrix = glm::mat4(1.0f);
+    glm::mat3 farPillarNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 nearPillarModelMatrix = glm::mat4(1.0f);
+    glm::mat3 nearPillarNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
+    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
 
     // ------- Lighting -------
     // we determine the position in the Shader Program of the uniform variables
@@ -209,6 +228,10 @@ int main()
         0, 1, 3,  // First Triangle (pa, pb, pd)
         0, 3, 2   // Second Triangle (pa, pd, pc)
     };
+
+    // -------- Skybox -------
+    GLuint skyboxTexture = LoadTextureCube("assets/textures/skybox/");
+    GLint skyboxLocation = glCheckUniformLocation(skyboxShader.Program, "tCube");
 
     // ------- Buffer objects\arrays -------
     GLuint wallVBO, wallVAO, wallEBO;
@@ -272,53 +295,133 @@ int main()
         GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
         GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view)));
 
-        // -----------PLANE-----------
-        // reset to identity at each frame
-        planeModelMatrix = glm::mat4(1.0f);
-        planeNormalMatrix = glm::mat3(1.0f);
-        // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-        planeNormalMatrix = glm::inverseTranspose(glm::mat3(view * planeModelMatrix));
-        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix)));
-        GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(planeNormalMatrix)));
+        // ------- VIRTUAL ENVIRONMENT (temporary view, toggled with E) -------
+        // later this content will be rendered only into the LED wall's FBO
+        if(showEnvironment)
+        {
+            // -----------FAR PILLAR-----------
 
-        GL_CHECK(glUniform3fv(matDiffuseLocation, 1, planeMaterial));
+            // reset to identity at each frame
+            farPillarModelMatrix = glm::mat4(1.0f);
+            farPillarNormalMatrix = glm::mat3(1.0f);
+            farPillarModelMatrix = glm::translate(farPillarModelMatrix, glm::vec3(0.0f, 3.0f, -15.0f));
+            farPillarModelMatrix = glm::scale(farPillarModelMatrix, glm::vec3(1.0f, 3.0f, 1.0f));
+            // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+            farPillarNormalMatrix = glm::inverseTranspose(glm::mat3(view * farPillarModelMatrix));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(farPillarModelMatrix)));
+            GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(farPillarNormalMatrix)));
 
-        // we render the plane
-        planeModel.Draw();
+            GL_CHECK(glUniform3fv(matDiffuseLocation, 1, farPillarMaterial));
 
-        // -----------YODA-----------
-        // reset to identity at each frame
-        yodaModelMatrix = glm::mat4(1.0f);
-        yodaNormalMatrix = glm::mat3(1.0f);
-        yodaModelMatrix = glm::scale(yodaModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));	// too big, scale it down
-        // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-        yodaNormalMatrix = glm::inverseTranspose(glm::mat3(view * yodaModelMatrix));
-        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(yodaModelMatrix)));
-        GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(yodaNormalMatrix)));
+            // we render the far pillar
+            cubeModel.Draw();
 
-        GL_CHECK(glUniform3fv(matDiffuseLocation, 1, yodaMaterial));
+            // -----------NEAR PILLAR-----------
+            // reset to identity at each frame
+            nearPillarModelMatrix = glm::mat4(1.0f);
+            nearPillarNormalMatrix = glm::mat3(1.0f);
+            nearPillarModelMatrix = glm::translate(nearPillarModelMatrix, glm::vec3(-2.0f, 1.5f, -5.0f));
+            nearPillarModelMatrix = glm::scale(nearPillarModelMatrix, glm::vec3(0.4f, 1.5f, 0.4f));
+            // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+            nearPillarNormalMatrix = glm::inverseTranspose(glm::mat3(view * nearPillarModelMatrix));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(nearPillarModelMatrix)));
+            GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(nearPillarNormalMatrix)));
 
-        // we render yoda
-        yodaModel.Draw();
+            GL_CHECK(glUniform3fv(matDiffuseLocation, 1, nearPillarMaterial));
 
-        // -----------LED WALL-----------
+            // we render the near pillar
+            cubeModel.Draw();
 
-        wallShader.Use();
+            // -----------SPHERE-----------
 
-        // we activate the texture with id 0, and we bind the id to our loaded texture data
-        GL_CHECK(glActiveTexture(GL_TEXTURE0));
-        GL_CHECK(glBindTexture(GL_TEXTURE_2D, wallTexture));
+            // reset to identity at each frame
+            sphereModelMatrix = glm::mat4(1.0f);
+            sphereNormalMatrix = glm::mat3(1.0f);
+            sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(1.5f, 1.0f, -8.0f));
+            sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
+            // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+            sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view * sphereModelMatrix));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix)));
+            GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix)));
 
-        GL_CHECK(glUniform1i(textureLocation, 0));
+            GL_CHECK(glUniform3fv(matDiffuseLocation, 1, sphereMaterial));
 
-        // we pass projection and view matrices to the Wall Shader
-        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(wallModelMatrix)));
-        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view)));
-        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+            // we render the sphere
+            sphereModel.Draw();
 
-        GL_CHECK(glBindVertexArray(wallVAO));
-        GL_CHECK(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
-        GL_CHECK(glBindVertexArray(0));
+            // -----------SKYBOX-----------
+            // drawn last: its depth is forced to 1.0 in the vertex shader (xyww),
+            // so GL_LEQUAL is needed to let it pass the depth test where nothing else was drawn
+            GL_CHECK(glDepthFunc(GL_LEQUAL));
+
+            skyboxShader.Use();
+
+            GL_CHECK(glActiveTexture(GL_TEXTURE0));
+            GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture));
+            GL_CHECK(glUniform1i(skyboxLocation, 0));
+            // rotation-only view matrix: removing the translation keeps the sky infinitely far away
+            glm::mat4 skyView = glm::mat4(glm::mat3(view));
+
+            // we pass projection and view matrices to the Shader Program
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(skyView)));
+
+            // we render the skybox
+            cubeModel.Draw();
+
+            // restore the default depth test for the next draws
+            GL_CHECK(glDepthFunc(GL_LESS));
+        }
+        else
+        {
+            // -----------PLANE-----------
+            // reset to identity at each frame
+            planeModelMatrix = glm::mat4(1.0f);
+            planeNormalMatrix = glm::mat3(1.0f);
+            // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+            planeNormalMatrix = glm::inverseTranspose(glm::mat3(view * planeModelMatrix));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(planeModelMatrix)));
+            GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(planeNormalMatrix)));
+
+            GL_CHECK(glUniform3fv(matDiffuseLocation, 1, planeMaterial));
+
+            // we render the plane
+            planeModel.Draw();
+
+            // -----------YODA-----------
+            // reset to identity at each frame
+            yodaModelMatrix = glm::mat4(1.0f);
+            yodaNormalMatrix = glm::mat3(1.0f);
+            yodaModelMatrix = glm::scale(yodaModelMatrix, glm::vec3(0.3f, 0.3f, 0.3f));
+            // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+            yodaNormalMatrix = glm::inverseTranspose(glm::mat3(view * yodaModelMatrix));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(yodaModelMatrix)));
+            GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(yodaNormalMatrix)));
+
+            GL_CHECK(glUniform3fv(matDiffuseLocation, 1, yodaMaterial));
+
+            // we render yoda
+            yodaModel.Draw();
+
+            // -----------LED WALL-----------
+
+            wallShader.Use();
+
+            // we activate the texture with id 0, and we bind the id to our loaded texture data
+            GL_CHECK(glActiveTexture(GL_TEXTURE0));
+            GL_CHECK(glBindTexture(GL_TEXTURE_2D, wallTexture));
+
+            GL_CHECK(glUniform1i(textureLocation, 0));
+
+            // we pass projection and view matrices to the Wall Shader
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(wallModelMatrix)));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view)));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(wallShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+
+            GL_CHECK(glBindVertexArray(wallVAO));
+            GL_CHECK(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
+            GL_CHECK(glBindVertexArray(0));
+        }
 
         // double buffering: swapping back and front buffers
         glfwSwapBuffers(window);
@@ -328,12 +431,14 @@ int main()
     // we delete the Shader Programs
     DeleteShader(shader);
     DeleteShader(wallShader);
+    DeleteShader(skyboxShader);
 
     GL_CHECK(glDeleteVertexArrays(1, &wallVAO));
     GL_CHECK(glDeleteBuffers(1, &wallVBO));
     GL_CHECK(glDeleteBuffers(1, &wallEBO));
 
     GL_CHECK(glDeleteTextures(1, &wallTexture));
+    GL_CHECK(glDeleteTextures(1, &skyboxTexture));
 
     // close and delete context
     glfwTerminate();
@@ -380,6 +485,64 @@ GLuint LoadTexture(const char* path)
 
 }
 
+///////////////////////////////////////////
+// load one side of the cubemap, passing the name of the file and the side of the corresponding OpenGL cubemap
+void LoadTextureCubeSide(std::string path, std::string side_image, GLenum side_name)
+{
+    int w, h;
+    unsigned char* image;
+    std::string fullname;
+
+    // full name and path of the side of the cubemap
+    fullname = path + side_image;
+    // we load the image file
+    stbi_set_flip_vertically_on_load(false);
+    image = stbi_load(fullname.c_str(), &w, &h, 0, STBI_rgb);
+    if (image == nullptr)
+        std::cout << "Failed to load texture!" << std::endl;
+    // we set the image file as one of the side of the cubemap (passed as a parameter)
+    GL_CHECK(glTexImage2D(side_name, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, image));
+    // we free the memory once we have created an OpenGL texture
+    stbi_image_free(image);
+}
+
+
+//////////////////////////////////////////
+// we load the 6 images from disk and we create an OpenGL cube map
+GLuint LoadTextureCube(std::string path)
+{
+    GLuint textureImage;
+
+    // we create and activate the OpenGL cubemap texture
+    GL_CHECK(glGenTextures(1, &textureImage));
+    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, textureImage));
+
+    // we load and set the 6 images corresponding to the 6 views of the cubemap
+    // we use as convention that the names of the 6 images, placed at the path passed as parameter
+    // we load the images individually and we assign them to the correct sides of the cube map
+    LoadTextureCubeSide(path, std::string("right.jpg"), GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+    LoadTextureCubeSide(path, std::string("left.jpg"), GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+    LoadTextureCubeSide(path, std::string("top.jpg"), GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+    LoadTextureCubeSide(path, std::string("bottom.jpg"), GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+    LoadTextureCubeSide(path, std::string("front.jpg"), GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+    LoadTextureCubeSide(path, std::string("back.jpg"), GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+
+    // we set the filtering for minification and magnification
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    // we set how to consider the texture coordinates outside [0,1] range
+    // in this case we have a cube map, so
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    GL_CHECK(glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
+
+    // we set the binding to 0 once we have finished
+    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, 0));
+
+    return textureImage;
+
+}
+
 /////////////////// SHADERS MANAGEMENT ///////////////////////
 void SetupShader(Shader& shader, const char* vertexPath, const char* fragmentPath)
 {
@@ -397,6 +560,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     // if ESC is pressed, close the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+
+    // if E is pressed, we alternate stage view and virtual view environment
+    if(key == GLFW_KEY_E && action == GLFW_PRESS)
+        showEnvironment = !showEnvironment;
 
     // we keep trace of the pressed keys
     // with this method, we can manage 2 keys pressed at the same time:
