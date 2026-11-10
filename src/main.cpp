@@ -85,6 +85,8 @@ GLuint LoadTexture(const char* path);
 // load the 6 images from disk and create an OpenGL cubemap
 GLuint LoadTextureCube(std::string path);
 
+void DrawEnvironment(Shader& shader, Shader& skyboxShader, Model& cubeModel, Model& sphereModel, GLuint skyboxTexture, GLint skyboxLocation, const glm::mat4& view, const glm::mat4& projection);
+
 // variable to manage transition from stage view to virtual view environment & viceversa
 bool showEnvironment = false;
 
@@ -192,12 +194,6 @@ int main()
     glm::mat3 planeNormalMatrix = glm::mat3(1.0f);
     glm::mat4 yodaModelMatrix = glm::mat4(1.0f);
     glm::mat3 yodaNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 farPillarModelMatrix = glm::mat4(1.0f);
-    glm::mat3 farPillarNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 nearPillarModelMatrix = glm::mat4(1.0f);
-    glm::mat3 nearPillarNormalMatrix = glm::mat3(1.0f);
-    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
-    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
 
     // ------- Lighting -------
     // we determine the position in the Shader Program of the uniform variables
@@ -220,6 +216,10 @@ int main()
     RenderTarget wallTarget(2048, 1024);
 
     glm::mat4 wallModelMatrix = glm::mat4(1.0f);
+
+    // naive virtual camera: fixed at the wall centre, standard perspective
+    glm::mat4 wallViewMatrix = glm::lookAt(glm::vec3(0.0f, 1.5f, -3.0f), glm::vec3(0.0f, 1.5f, -4.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 wallProjection = glm::perspective(glm::radians(45.0f), (float)wallTarget.GetWidth() / wallTarget.GetHeight(), 0.1f, 100.0f);
 
     // the LED wall quad: 4 corners in world coordinates (pd = pb + pc - pa)
     GLfloat vertices[] =
@@ -281,13 +281,13 @@ int main()
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 
-        // temporary FBO test: clear the target to magenta
         wallTarget.Bind();
         
-        GL_CHECK(glClearColor(1.0f, 0.0f, 1.0f, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-        GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
         
+        DrawEnvironment(shader, skyboxShader, cubeModel, sphereModel, skyboxTexture, skyboxLocation, wallViewMatrix, wallProjection);
+        GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+
         glfwGetFramebufferSize(window, &width, &height);
 
         GL_CHECK(glViewport(0, 0, width, height));
@@ -295,102 +295,29 @@ int main()
         // "clear" the frame and z-buffer
         GL_CHECK(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+        
 
-        // usage of Shader Program as part of the current rendering process
-        shader.Use();
-
-        // we assign the value to the uniform variables
-        GL_CHECK(glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos)));
-        GL_CHECK(glUniform3fv(matAmbientLocation, 1, ambientColor));
-        GL_CHECK(glUniform3fv(matSpecularLocation, 1, specularColor));
-        GL_CHECK(glUniform1f(kaLocation, Ka));
-        GL_CHECK(glUniform1f(kdLocation, Kd));
-        GL_CHECK(glUniform1f(ksLocation, Ks));
-        GL_CHECK(glUniform1f(shineLocation, shininess));
-
-        // we pass projection and view matrices to the Shader Program
-        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
-        GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view)));
-
-        // ------- VIRTUAL ENVIRONMENT (temporary view, toggled with E) -------
-        // later this content will be rendered only into the LED wall's FBO
         if(showEnvironment)
-        {
-            // -----------FAR PILLAR-----------
-
-            // reset to identity at each frame
-            farPillarModelMatrix = glm::mat4(1.0f);
-            farPillarNormalMatrix = glm::mat3(1.0f);
-            farPillarModelMatrix = glm::translate(farPillarModelMatrix, glm::vec3(0.0f, 3.0f, -15.0f));
-            farPillarModelMatrix = glm::scale(farPillarModelMatrix, glm::vec3(1.0f, 3.0f, 1.0f));
-            // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-            farPillarNormalMatrix = glm::inverseTranspose(glm::mat3(view * farPillarModelMatrix));
-            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(farPillarModelMatrix)));
-            GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(farPillarNormalMatrix)));
-
-            GL_CHECK(glUniform3fv(matDiffuseLocation, 1, farPillarMaterial));
-
-            // we render the far pillar
-            cubeModel.Draw();
-
-            // -----------NEAR PILLAR-----------
-            // reset to identity at each frame
-            nearPillarModelMatrix = glm::mat4(1.0f);
-            nearPillarNormalMatrix = glm::mat3(1.0f);
-            nearPillarModelMatrix = glm::translate(nearPillarModelMatrix, glm::vec3(-2.0f, 1.5f, -5.0f));
-            nearPillarModelMatrix = glm::scale(nearPillarModelMatrix, glm::vec3(0.4f, 1.5f, 0.4f));
-            // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-            nearPillarNormalMatrix = glm::inverseTranspose(glm::mat3(view * nearPillarModelMatrix));
-            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(nearPillarModelMatrix)));
-            GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(nearPillarNormalMatrix)));
-
-            GL_CHECK(glUniform3fv(matDiffuseLocation, 1, nearPillarMaterial));
-
-            // we render the near pillar
-            cubeModel.Draw();
-
-            // -----------SPHERE-----------
-
-            // reset to identity at each frame
-            sphereModelMatrix = glm::mat4(1.0f);
-            sphereNormalMatrix = glm::mat3(1.0f);
-            sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(1.5f, 1.0f, -8.0f));
-            sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
-            // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
-            sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view * sphereModelMatrix));
-            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix)));
-            GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix)));
-
-            GL_CHECK(glUniform3fv(matDiffuseLocation, 1, sphereMaterial));
-
-            // we render the sphere
-            sphereModel.Draw();
-
-            // -----------SKYBOX-----------
-            // drawn last: its depth is forced to 1.0 in the vertex shader (xyww),
-            // so GL_LEQUAL is needed to let it pass the depth test where nothing else was drawn
-            GL_CHECK(glDepthFunc(GL_LEQUAL));
-
-            skyboxShader.Use();
-
-            GL_CHECK(glActiveTexture(GL_TEXTURE0));
-            GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture));
-            GL_CHECK(glUniform1i(skyboxLocation, 0));
-            // rotation-only view matrix: removing the translation keeps the sky infinitely far away
-            glm::mat4 skyView = glm::mat4(glm::mat3(view));
-
-            // we pass projection and view matrices to the Shader Program
-            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
-            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(skyView)));
-
-            // we render the skybox
-            cubeModel.Draw();
-
-            // restore the default depth test for the next draws
-            GL_CHECK(glDepthFunc(GL_LESS));
-        }
+            DrawEnvironment(shader, skyboxShader, cubeModel, sphereModel, skyboxTexture, skyboxLocation, view, projection);
         else
         {
+            // usage of Shader Program as part of the current rendering process
+            shader.Use();
+
+            // we assign the value to the uniform variables
+            GL_CHECK(glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos)));
+            GL_CHECK(glUniform3fv(matAmbientLocation, 1, ambientColor));
+            GL_CHECK(glUniform3fv(matSpecularLocation, 1, specularColor));
+            GL_CHECK(glUniform1f(kaLocation, Ka));
+            GL_CHECK(glUniform1f(kdLocation, Kd));
+            GL_CHECK(glUniform1f(ksLocation, Ks));
+            GL_CHECK(glUniform1f(shineLocation, shininess));
+
+            // we pass projection and view matrices to the Shader Program
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+            GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view)));
+
+
             // -----------PLANE-----------
             // reset to identity at each frame
             planeModelMatrix = glm::mat4(1.0f);
@@ -569,6 +496,99 @@ void SetupShader(Shader& shader, const char* vertexPath, const char* fragmentPat
 void DeleteShader(Shader& shader)
 {
     shader.Delete();
+}
+
+void DrawEnvironment(Shader& shader, Shader& skyboxShader, Model& cubeModel, Model& sphereModel, GLuint skyboxTexture, GLint skyboxLocation, const glm::mat4& view, const glm::mat4& projection)
+{
+    // usage of Shader Program as part of the current rendering process
+    shader.Use();
+
+    // we assign the value to the uniform variables
+    GL_CHECK(glUniform3fv(pointLightLocation, 1, glm::value_ptr(lightPos)));
+    GL_CHECK(glUniform3fv(matAmbientLocation, 1, ambientColor));
+    GL_CHECK(glUniform3fv(matSpecularLocation, 1, specularColor));
+    GL_CHECK(glUniform1f(kaLocation, Ka));
+    GL_CHECK(glUniform1f(kdLocation, Kd));
+    GL_CHECK(glUniform1f(ksLocation, Ks));
+    GL_CHECK(glUniform1f(shineLocation, shininess));
+
+    // we pass projection and view matrices to the Shader Program
+    GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+    GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view)));
+
+    // ------- VIRTUAL ENVIRONMENT -------
+
+    glm::mat4 farPillarModelMatrix = glm::mat4(1.0f);
+    glm::mat3 farPillarNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 nearPillarModelMatrix = glm::mat4(1.0f);
+    glm::mat3 nearPillarNormalMatrix = glm::mat3(1.0f);
+    glm::mat4 sphereModelMatrix = glm::mat4(1.0f);
+    glm::mat3 sphereNormalMatrix = glm::mat3(1.0f);
+
+    // -----------FAR PILLAR-----------
+
+    farPillarModelMatrix = glm::translate(farPillarModelMatrix, glm::vec3(0.0f, 3.0f, -15.0f));
+    farPillarModelMatrix = glm::scale(farPillarModelMatrix, glm::vec3(1.0f, 3.0f, 1.0f));
+    // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+    farPillarNormalMatrix = glm::inverseTranspose(glm::mat3(view * farPillarModelMatrix));
+    GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(farPillarModelMatrix)));
+    GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(farPillarNormalMatrix)));
+
+    GL_CHECK(glUniform3fv(matDiffuseLocation, 1, farPillarMaterial));
+
+    // we render the far pillar
+    cubeModel.Draw();
+
+    // -----------NEAR PILLAR-----------
+    nearPillarModelMatrix = glm::translate(nearPillarModelMatrix, glm::vec3(-2.0f, 1.5f, -5.0f));
+    nearPillarModelMatrix = glm::scale(nearPillarModelMatrix, glm::vec3(0.4f, 1.5f, 0.4f));
+    // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+    nearPillarNormalMatrix = glm::inverseTranspose(glm::mat3(view * nearPillarModelMatrix));
+    GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(nearPillarModelMatrix)));
+    GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(nearPillarNormalMatrix)));
+
+    GL_CHECK(glUniform3fv(matDiffuseLocation, 1, nearPillarMaterial));
+
+    // we render the near pillar
+    cubeModel.Draw();
+
+    // -----------SPHERE-----------
+
+    sphereModelMatrix = glm::translate(sphereModelMatrix, glm::vec3(1.5f, 1.0f, -8.0f));
+    sphereModelMatrix = glm::scale(sphereModelMatrix, glm::vec3(1.0f, 1.0f, 1.0f));
+    // if we cast a mat4 to a mat3, we are automatically considering the upper left 3x3 submatrix
+    sphereNormalMatrix = glm::inverseTranspose(glm::mat3(view * sphereModelMatrix));
+    GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(sphereModelMatrix)));
+    GL_CHECK(glUniformMatrix3fv(glGetUniformLocation(shader.Program, "normals"), 1, GL_FALSE, glm::value_ptr(sphereNormalMatrix)));
+
+    GL_CHECK(glUniform3fv(matDiffuseLocation, 1, sphereMaterial));
+
+    // we render the sphere
+    sphereModel.Draw();
+
+    // -----------SKYBOX-----------
+    // drawn last: its depth is forced to 1.0 in the vertex shader (xyww),
+    // so GL_LEQUAL is needed to let it pass the depth test where nothing else was drawn
+    GL_CHECK(glDepthFunc(GL_LEQUAL));
+
+    skyboxShader.Use();
+
+    GL_CHECK(glActiveTexture(GL_TEXTURE0));
+    GL_CHECK(glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture));
+    GL_CHECK(glUniform1i(skyboxLocation, 0));
+    // rotation-only view matrix: removing the translation keeps the sky infinitely far away
+    glm::mat4 skyView = glm::mat4(glm::mat3(view));
+
+    // we pass projection and view matrices to the Shader Program
+    GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection)));
+    GL_CHECK(glUniformMatrix4fv(glGetUniformLocation(skyboxShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(skyView)));
+
+    // we render the skybox
+    cubeModel.Draw();
+
+    // restore the default depth test for the next draws
+    GL_CHECK(glDepthFunc(GL_LESS));
+
 }
 
 /////////////////// CALLBACK FOR KEYBOARD EVENTS ///////////////////////
