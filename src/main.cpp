@@ -109,7 +109,6 @@ GLfloat currentFrame = 0.0f;
 
 // callback function for keyboard events
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-void fb_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void apply_camera_movements();
 
@@ -144,7 +143,6 @@ int main()
 
     // relate window and the callbacks
     glfwSetKeyCallback(window, key_callback);
-    glfwSetFramebufferSizeCallback(window, fb_size_callback);
     
     glfwSetCursorPosCallback(window, mouse_callback);
 
@@ -184,8 +182,8 @@ int main()
     Model sphereModel("assets/models/sphere.obj");
 
     // we set projection and view matrices
-    // Projection matrix: FOV angle, aspect ratio, near and far planes
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
+    // Projection matrix: recomputed every frame from the framebuffer size
+    glm::mat4 projection = glm::mat4(1.0f);
     // View matrix: the camera moves, so we just set to identity now
     glm::mat4 view = glm::mat4(1.0f);
 
@@ -289,6 +287,12 @@ int main()
         GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 
         glfwGetFramebufferSize(window, &width, &height);
+        
+        // window minimised: zero-sized framebuffer, skip the screen pass
+        if(width == 0 || height == 0)
+            continue;
+    
+        projection = glm::perspective(glm::radians(45.0f), (float)width/(float)height, 0.1f, 100.0f);
 
         GL_CHECK(glViewport(0, 0, width, height));
 
@@ -613,11 +617,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         keys[key] = true;
     else if(action == GLFW_RELEASE)
         keys[key] = false;
-}
-
-void fb_size_callback(GLFWwindow* window, int width, int height)
-{
-    GL_CHECK(glViewport(0, 0, width, height));
 }
 
 //////////////////////////////////////////
