@@ -22,6 +22,9 @@ LDFLAGS = -L$(LDIR) -lglfw3 -lassimp -lz -lminizip -lkubazip -lpoly2tri -lpolycl
 
 SOURCES = external/include/glad/glad.c src/main.cpp
 
+# project headers: most of the code is in header files, so they are dependencies of the executable too
+HEADERS = $(shell find src -name '*.h')
+
 TARGET = $(FILENAME).out
 
 .PHONY : all
@@ -30,8 +33,8 @@ all: $(TARGET)
 .PHONY : clean
 clean :
 	-rm $(TARGET) -f
-# the executable is a real file: rebuilt only if a source is newer than it
-$(TARGET): $(SOURCES)
+# the executable is a real file: rebuilt only if a source or a header is newer than it
+$(TARGET): $(SOURCES) $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(SOURCES) $(LDFLAGS) -o $(TARGET)
 
 .PHONY : run

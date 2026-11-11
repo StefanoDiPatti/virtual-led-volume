@@ -15,5 +15,6 @@ make clean
 ## Credits
 
 - `src/utils/shader.h`, `src/utils/model.h`, `src/utils/mesh.h`, `src/utils/camera.h` and the `Makefile` structure are based on the laboratory code of the course by Davide Gadia and Michael Marchesan, in turn adapted from [LearnOpenGL](https://github.com/JoeyDeVries/LearnOpenGL) by Joey de Vries.
-- Models in `assets/models/` come from the course laboratory material.
+- The texture and cubemap loading functions in `src/render/texture.h` and the skybox shaders (`shaders/skybox.vert`, `shaders/skybox.frag`) are based on the same laboratory code.
+- Models in `assets/models/` and textures in `assets/textures/` (UV test grid, skybox) come from the course laboratory material.
 - Third-party libraries in `external/`: GLAD, GLFW, GLM, Assimp, stb_image.
