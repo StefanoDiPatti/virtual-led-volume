@@ -25,6 +25,10 @@ SOURCES = external/include/glad/glad.c src/main.cpp
 # project headers: most of the code is in header files, so they are dependencies of the executable too
 HEADERS = $(shell find src -name '*.h')
 
+# CPU tests (no OpenGL context needed)
+TEST_SOURCES = tests/test_offaxis.cpp
+TEST_TARGET = test_offaxis.out
+
 TARGET = $(FILENAME).out
 
 .PHONY : all
@@ -40,6 +44,11 @@ $(TARGET): $(SOURCES) $(HEADERS)
 .PHONY : run
 run : all
 	./$(TARGET)
+
 .PHONY : test
-test :
-	echo "No tests yet"
+test : $(TEST_TARGET)
+	./$(TEST_TARGET)
+
+# the test uses only GLM: no glad, no libraries to link
+$(TEST_TARGET): $(TEST_SOURCES) src/render/offaxis.h
+	$(CXX) $(CXXFLAGS) $(TEST_SOURCES) -o $(TEST_TARGET)

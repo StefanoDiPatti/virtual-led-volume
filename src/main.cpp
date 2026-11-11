@@ -33,6 +33,8 @@ positive Z axis points "outside" the screen
 // scene shader and lighting parameters
 #include <render/scene_shader.h>
 #include <render/lighting.h>
+// off-axis projection for the LED wall
+#include <render/offaxis.h>
 
 // objects of the scene: stage, virtual environment, LED wall
 #include <scene/stage.h>
