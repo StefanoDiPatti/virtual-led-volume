@@ -3,6 +3,7 @@ Test of the off-axis projection
 - centred eye: same matrices of a standard symmetric perspective
 - any eye position: the wall corners are projected on the corners of the NDC square
 - eye moved to the right: asymmetric frustum
+- eye on the wall plane or behind the wall: not valid result
 */
 
 // Std. Includes
@@ -73,8 +74,8 @@ int main()
     glm::mat4 expectedProjection = glm::perspective(fovy, 2.0f, nearPlane, farPlane);
     glm::mat4 expectedView = glm::lookAt(pe, pe + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    Check("centered eye: projection", MatricesEqual(m.projection, expectedProjection), failures);
-    Check("centered eye: view", MatricesEqual(m.view, expectedView), failures);
+    Check("centered eye: projection", m.isValid && MatricesEqual(m.projection, expectedProjection), failures);
+    Check("centered eye: view", m.isValid && MatricesEqual(m.view, expectedView), failures);
 
     // (b) eye out of centre: the wall corners must be projected on the NDC corners
     pe = glm::vec3(2.5f, 0.5f, 1.0f);
@@ -85,16 +86,28 @@ int main()
     glm::vec3 ndcC = ProjectToNDC(m.projection, m.view, pc);
     glm::vec3 ndcD = ProjectToNDC(m.projection, m.view, pd);
 
-    Check("pa -> (-1,-1)", NearlyEqual(ndcA.x, -1.0f) && NearlyEqual(ndcA.y, -1.0f), failures);
-    Check("pb -> (+1,-1)", NearlyEqual(ndcB.x, 1.0f) && NearlyEqual(ndcB.y, -1.0f), failures);
-    Check("pc -> (-1,+1)", NearlyEqual(ndcC.x, -1.0f) && NearlyEqual(ndcC.y, 1.0f), failures);
-    Check("pd -> (+1,+1)", NearlyEqual(ndcD.x, 1.0f) && NearlyEqual(ndcD.y, 1.0f), failures);
+    Check("pa -> (-1,-1)", m.isValid && NearlyEqual(ndcA.x, -1.0f) && NearlyEqual(ndcA.y, -1.0f), failures);
+    Check("pb -> (+1,-1)", m.isValid && NearlyEqual(ndcB.x, 1.0f) && NearlyEqual(ndcB.y, -1.0f), failures);
+    Check("pc -> (-1,+1)", m.isValid && NearlyEqual(ndcC.x, -1.0f) && NearlyEqual(ndcC.y, 1.0f), failures);
+    Check("pd -> (+1,+1)", m.isValid && NearlyEqual(ndcD.x, 1.0f) && NearlyEqual(ndcD.y, 1.0f), failures);
 
     // (c) eye moved to the right: the frustum is not symmetric anymore
     pe = glm::vec3(1.0f, 1.5f, 3.0f);
     m = OffAxisProjection(pa, pb, pc, pe, nearPlane, farPlane);
 
-    Check("eye on the right: asymmetric", m.projection[2][0] < 0 && NearlyEqual(m.projection[2][1], 0), failures);
+    Check("eye on the right: asymmetric", m.isValid && m.projection[2][0] < 0 && NearlyEqual(m.projection[2][1], 0), failures);
+
+    // (d) eye behind the LED wall
+    pe = glm::vec3(0.0f, 1.5f, -5.0f);
+    m = OffAxisProjection(pa, pb, pc, pe, nearPlane, farPlane);
+
+    Check("eye behind the LED wall", !m.isValid, failures);
+
+    // (e) eye on the LED wall
+    pe = glm::vec3(0.0f, 1.5f, -3.0f);
+    m = OffAxisProjection(pa, pb, pc, pe, nearPlane, farPlane);
+
+    Check("eye on the LED wall", !m.isValid, failures);
 
     if(failures == 0)
         return 0;

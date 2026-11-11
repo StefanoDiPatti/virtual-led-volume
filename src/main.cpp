@@ -103,10 +103,11 @@ int main()
 
         // ------- PASS 1: virtual environment rendered into the wall FBO -------
         // off-axis projection from the camera position (it does not depend on the camera orientation)
-        OffAxisMatrices wallCamera = wall.GetOffAxisMatrices(camera.Position, 0.1f, 100.0f);
+        // near plane small and fixed: all the virtual objects are behind the wall
+        wall.UpdateEye(camera.Position, 0.1f, 100.0f);
 
         wall.BeginCapture();
-        environment.Draw(sceneShader, wallCamera.view, wallCamera.projection, lighting);
+        environment.Draw(sceneShader, wall.GetEyeMatrices().view, wall.GetEyeMatrices().projection, lighting);
         wall.EndCapture();
 
         // ------- PASS 2: screen -------

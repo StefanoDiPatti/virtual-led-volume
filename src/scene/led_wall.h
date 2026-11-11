@@ -5,7 +5,7 @@ LedWall class
 - quad geometry (VAO/VBO/EBO with positions and UVs)
 - off-screen render target (FBO) where the virtual environment is rendered,
   then applied as texture on the quad (unlit/emissive)
-- off-axis projection of the wall from the camera position
+- off-axis projection of the wall from the camera position (the last valid one is kept)
 */
 
 #pragma once
@@ -96,11 +96,18 @@ public:
     // aspect ratio of the render target (same as the wall: 6x3 m -> 2:1)
     GLfloat GetAspect() const { return (GLfloat)this->target.GetWidth() / (GLfloat)this->target.GetHeight(); }
 
-    // off-axis view and projection of the wall seen from the eye position
-    OffAxisMatrices GetOffAxisMatrices(const glm::vec3& eye, float nearPlane, float farPlane) const
+    // update of the off-axis projection from the eye position:
+    // if the eye is not in front of the wall, we keep the last valid projection
+    void UpdateEye(const glm::vec3& eye, float nearPlane, float farPlane)
     {
-        return OffAxisProjection(this->pa, this->pb, this->pc, eye, nearPlane, farPlane);
+        OffAxisMatrices updatedEyeMatrices = OffAxisProjection(this->pa, this->pb, this->pc, eye, nearPlane, farPlane);
+
+        if(updatedEyeMatrices.isValid)
+            eyeMatrices = updatedEyeMatrices;
     }
+
+    // off-axis view and projection of the wall seen from the eye position
+    OffAxisMatrices GetEyeMatrices() const { return this->eyeMatrices; }
 
     // corners of the wall in world coordinates
     const glm::vec3& GetPa() const { return this->pa; }
@@ -111,6 +118,9 @@ public:
 private:
     // corners of the wall
     glm::vec3 pa, pb, pc, pd;
+
+    // last valid off-axis view and projection
+    OffAxisMatrices eyeMatrices;
 
     // off-screen target for the virtual environment
     RenderTarget target;

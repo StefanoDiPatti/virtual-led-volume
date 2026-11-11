@@ -2,6 +2,7 @@
 Off-axis projection
 - generalized perspective projection of a planar screen (the LED wall) from the eye position
 - pa, pb, pc: lower-left, lower-right and upper-left corners of the screen (world coordinates)
+- the result is not valid if the eye is not in front of the screen
 - based on: R. Kooima, "Generalized Perspective Projection"
 */
 
@@ -14,8 +15,11 @@ Off-axis projection
 /////////////////// OFF-AXIS MATRICES struct ///////////////////////
 struct OffAxisMatrices
 {
-    glm::mat4 view;
-    glm::mat4 projection;
+    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+
+    // false if the eye is not in front of the screen
+    bool isValid = false;
 };
 
 // it returns the view and projection matrices for the eye position pe
@@ -35,6 +39,17 @@ inline OffAxisMatrices OffAxisProjection(const glm::vec3& pa, const glm::vec3& p
 
     // distance from the eye to the screen plane
     float d = -glm::dot(va, vn);
+
+    // the eye must be in front of the screen: on the screen plane (d = 0) or behind it (d < 0)
+    // the extents cannot be computed, so we return a not valid result
+    const float minDistance = 1e-4f;
+    if(d <= minDistance)
+    {
+        offAxisMatrices.isValid = false;
+        return offAxisMatrices;
+    }
+    else
+        offAxisMatrices.isValid = true;
 
     // frustum extents on the near plane (scaled by nearPlane/d)
     float l = glm::dot(vr, va) * nearPlane / d;
