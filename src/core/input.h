@@ -2,7 +2,7 @@
 Input class
 - keyboard and mouse callbacks of the application
 - state of the pressed keys, WASD + mouse movements applied to the camera
-- application toggles (E: stage view / virtual environment view)
+- view mode of the application (E: stage / ground truth / difference)
 
 N.B.) GLFW accepts only free (or static) functions as callbacks: we store the pointer to the Input instance
 inside the window (glfwSetWindowUserPointer), and the static callbacks retrieve it to call the member functions
@@ -18,6 +18,14 @@ inside the window (glfwSetWindowUserPointer), and the static callbacks retrieve 
 
 // class to manage the FPS camera
 #include <utils/camera.h>
+
+// view modes of the application
+enum class VIEW_MODE
+{
+    STAGE,
+    GROUND_TRUTH,
+    DIFFERENCE
+};
 
 /////////////////// INPUT class ///////////////////////
 class Input
@@ -63,8 +71,8 @@ public:
             this->camera.ProcessKeyboard(RIGHT, deltaTime);
     }
 
-    // true if the virtual environment must be shown directly (ground truth view), false for the stage view
-    bool ShowEnvironment() const { return this->showEnvironment; }
+    // current view mode
+    VIEW_MODE GetViewMode() const { return this->viewMode; }
 
 private:
     // camera moved by the keyboard and mouse events
@@ -78,8 +86,8 @@ private:
     // when rendering the first frame, we do not have a "previous state" for the mouse, so we need to manage this situation
     bool firstMouse = true;
 
-    // stage view / virtual environment view
-    bool showEnvironment = false;
+    // current view mode
+    VIEW_MODE viewMode = VIEW_MODE::STAGE;
 
     // static callbacks: they retrieve the Input instance stored in the window and call its member functions
     static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
@@ -101,9 +109,25 @@ private:
         if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(window, GL_TRUE);
 
-        // if E is pressed, we alternate stage view and virtual environment view
+        // if E is pressed, we switch to the next view mode (stage -> ground truth -> difference)
         if(key == GLFW_KEY_E && action == GLFW_PRESS)
-            this->showEnvironment = !this->showEnvironment;
+        {
+            switch(viewMode)
+            {
+                case VIEW_MODE::STAGE:
+                    viewMode = VIEW_MODE::GROUND_TRUTH;
+                    break;
+                case VIEW_MODE::GROUND_TRUTH:
+                    viewMode = VIEW_MODE::DIFFERENCE;
+                    break;
+                case VIEW_MODE::DIFFERENCE:
+                    viewMode = VIEW_MODE::STAGE;
+                    break;
+                default:
+                    viewMode = VIEW_MODE::STAGE;
+                    break;
+            }
+        }
 
         // we keep trace of the pressed keys
         // with this method, we can manage 2 keys pressed at the same time:

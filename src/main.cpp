@@ -123,16 +123,31 @@ int main()
         GL_CHECK(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-        if(input.ShowEnvironment())
+        VIEW_MODE mode = input.GetViewMode();
+        switch(mode)
         {
-            // ground truth: the virtual environment seen directly from the camera
-            environment.Draw(sceneShader, view, projection, lighting);
-        }
-        else
-        {
-            // stage view: the physical set and the LED wall showing the content of the FBO
-            stage.Draw(sceneShader, view, projection, lighting);
-            wall.Draw(view, projection);
+            case VIEW_MODE::STAGE:
+            {
+                // stage view: the physical set and the LED wall showing the content of the FBO
+                stage.Draw(sceneShader, view, projection, lighting);
+                wall.Draw(view, projection);
+                break;
+            }
+            case VIEW_MODE::GROUND_TRUTH:
+            {
+                // ground truth: the virtual environment seen directly from the camera
+                environment.Draw(sceneShader, view, projection, lighting);
+                break;
+            }
+            case VIEW_MODE::DIFFERENCE:
+            {
+                // difference: ground truth first, then the wall subtracted from it (black if they match)
+                environment.Draw(sceneShader, view, projection, lighting);
+                wall.DrawDifference(view, projection);
+                break;
+            }
+            default:
+                break;
         }
 
         // double buffering: swapping back and front buffers

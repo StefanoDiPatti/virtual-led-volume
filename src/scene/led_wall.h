@@ -76,6 +76,23 @@ public:
         GL_CHECK(glBindVertexArray(0));
     }
 
+    // rendering of the wall subtracted from the image already in the framebuffer (ground truth - wall):
+    // where the off-axis projection is correct, the result is black
+    void DrawDifference(const glm::mat4& view, const glm::mat4& projection)
+    {
+        // we activate the blending: the fragment colour is combined with the colour already in the framebuffer
+        GL_CHECK(glEnable(GL_BLEND));
+        // full colours, no alpha weights
+        GL_CHECK(glBlendFunc(GL_ONE, GL_ONE));
+        // result = destination - source
+        GL_CHECK(glBlendEquation(GL_FUNC_REVERSE_SUBTRACT));
+        this->Draw(view, projection);
+
+        // we restore the default blending state for the next draws
+        GL_CHECK(glBlendEquation(GL_FUNC_ADD));
+        GL_CHECK(glDisable(GL_BLEND));
+    }
+
     // aspect ratio of the render target (same as the wall: 6x3 m -> 2:1)
     GLfloat GetAspect() const { return (GLfloat)this->target.GetWidth() / (GLfloat)this->target.GetHeight(); }
 
