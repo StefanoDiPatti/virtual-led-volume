@@ -21,7 +21,6 @@ N.B.) the stb_image implementation (STB_IMAGE_IMPLEMENTATION) is compiled only o
 // class to manage OpenGL failures
 #include <render/gl_check.h>
 
-//////////////////////////////////////////
 // we load the image from disk and we create an OpenGL texture
 inline GLuint LoadTexture(const char* path)
 {
@@ -61,7 +60,6 @@ inline GLuint LoadTexture(const char* path)
     return textureImage;
 }
 
-///////////////////////////////////////////
 // load one side of the cubemap, passing the name of the file and the side of the corresponding OpenGL cubemap
 inline void LoadTextureCubeSide(const std::string& path, const std::string& side_image, GLenum side_name)
 {
@@ -82,7 +80,6 @@ inline void LoadTextureCubeSide(const std::string& path, const std::string& side
     stbi_image_free(image);
 }
 
-//////////////////////////////////////////
 // we load the 6 images from disk and we create an OpenGL cube map
 inline GLuint LoadTextureCube(const std::string& path)
 {

@@ -25,7 +25,6 @@ class Stage
 {
 public:
 
-    //////////////////////////////////////////
     // constructor: models loading and model matrices (the objects are static)
     Stage() : plane("assets/models/plane.obj"), subject("assets/models/babyyoda.obj")
     {
@@ -36,7 +35,6 @@ public:
         this->subjectModelMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(0.3f, 0.3f, 0.3f));
     }
 
-    //////////////////////////////////////////
     // rendering of the stage from the given camera
     void Draw(SceneShader& shader, const glm::mat4& view, const glm::mat4& projection, const Lighting& lighting)
     {

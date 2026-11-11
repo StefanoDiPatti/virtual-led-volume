@@ -5,6 +5,7 @@ LedWall class
 - quad geometry (VAO/VBO/EBO with positions and UVs)
 - off-screen render target (FBO) where the virtual environment is rendered,
   then applied as texture on the quad (unlit/emissive)
+- off-axis projection of the wall from the camera position
 */
 
 #pragma once
@@ -22,12 +23,14 @@ LedWall class
 #include <render/framebuffer.h>
 #include <render/wall_shader.h>
 
+// off-axis projection through the wall corners
+#include <render/offaxis.h>
+
 /////////////////// LED WALL class ///////////////////////
 class LedWall
 {
 public:
 
-    //////////////////////////////////////////
     // constructor: corners of the wall, resolution of the render target
     LedWall(const glm::vec3& pa, const glm::vec3& pb, const glm::vec3& pc, int targetWidth, int targetHeight)
         : pa(pa), pb(pb), pc(pc), pd(pb + pc - pa),
@@ -41,7 +44,6 @@ public:
     LedWall(const LedWall&) = delete;
     LedWall& operator=(const LedWall&) = delete;
 
-    //////////////////////////////////////////
     // destructor: we delete the buffers of the quad
     ~LedWall()
     {
@@ -50,7 +52,6 @@ public:
         GL_CHECK(glDeleteBuffers(1, &this->EBO));
     }
 
-    //////////////////////////////////////////
     // the following rendering calls are directed to the wall render target
     void BeginCapture()
     {
@@ -64,7 +65,6 @@ public:
         GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     }
 
-    //////////////////////////////////////////
     // rendering of the wall quad, textured with the content of the render target
     void Draw(const glm::mat4& view, const glm::mat4& projection)
     {
@@ -76,9 +76,14 @@ public:
         GL_CHECK(glBindVertexArray(0));
     }
 
-    //////////////////////////////////////////
     // aspect ratio of the render target (same as the wall: 6x3 m -> 2:1)
     GLfloat GetAspect() const { return (GLfloat)this->target.GetWidth() / (GLfloat)this->target.GetHeight(); }
+
+    // off-axis view and projection of the wall seen from the eye position
+    OffAxisMatrices GetOffAxisMatrices(const glm::vec3& eye, float nearPlane, float farPlane) const
+    {
+        return OffAxisProjection(this->pa, this->pb, this->pc, eye, nearPlane, farPlane);
+    }
 
     // corners of the wall in world coordinates
     const glm::vec3& GetPa() const { return this->pa; }
@@ -97,7 +102,6 @@ private:
     // buffer objects\arrays of the quad
     GLuint VAO = 0, VBO = 0, EBO = 0;
 
-    //////////////////////////////////////////
     // creation of the quad: interleaved positions (location 0) and UVs (location 2)
     void SetupQuad()
     {

@@ -18,7 +18,6 @@ struct OffAxisMatrices
     glm::mat4 projection;
 };
 
-//////////////////////////////////////////
 // it returns the view and projection matrices for the eye position pe
 inline OffAxisMatrices OffAxisProjection(const glm::vec3& pa, const glm::vec3& pb, const glm::vec3& pc, const glm::vec3& pe, float nearPlane, float farPlane)
 {

@@ -24,7 +24,6 @@ class Input
 {
 public:
 
-    //////////////////////////////////////////
     // constructor: the instance is related to the window, and the callbacks are set
     Input(GLFWwindow* window, Camera& camera) : camera(camera)
     {
@@ -43,7 +42,6 @@ public:
     Input(const Input&) = delete;
     Input& operator=(const Input&) = delete;
 
-    //////////////////////////////////////////
     // If one of the WASD keys is pressed, the camera is moved accordingly (the code is in utils/camera.h)
     void ApplyCameraMovements(GLfloat deltaTime)
     {
@@ -65,7 +63,6 @@ public:
             this->camera.ProcessKeyboard(RIGHT, deltaTime);
     }
 
-    //////////////////////////////////////////
     // true if the virtual environment must be shown directly (ground truth view), false for the stage view
     bool ShowEnvironment() const { return this->showEnvironment; }
 
@@ -84,7 +81,6 @@ private:
     // stage view / virtual environment view
     bool showEnvironment = false;
 
-    //////////////////////////////////////////
     // static callbacks: they retrieve the Input instance stored in the window and call its member functions
     static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
     {
@@ -98,7 +94,6 @@ private:
         input->OnMouseMove(xpos, ypos);
     }
 
-    //////////////////////////////////////////
     // keyboard events
     void OnKey(GLFWwindow* window, int key, int action)
     {
@@ -123,7 +118,6 @@ private:
             this->keys[key] = false;
     }
 
-    //////////////////////////////////////////
     // mouse events
     void OnMouseMove(double xpos, double ypos)
     {

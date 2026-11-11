@@ -31,7 +31,6 @@ class SceneShader
 {
 public:
 
-    //////////////////////////////////////////
     // constructor: creation of the Shader Program and of the uniform locations
     SceneShader(const GLchar* vertexPath, const GLchar* fragmentPath) : shader(vertexPath, fragmentPath)
     {
@@ -56,14 +55,12 @@ public:
     SceneShader(const SceneShader&) = delete;
     SceneShader& operator=(const SceneShader&) = delete;
 
-    //////////////////////////////////////////
     // destructor: we delete the Shader Program
     ~SceneShader()
     {
         this->shader.Delete();
     }
 
-    //////////////////////////////////////////
     // usage of the Shader Program, and uniforms shared by all the objects rendered with the same camera
     void Begin(const glm::mat4& view, const glm::mat4& projection, const Lighting& lighting)
     {
@@ -87,7 +84,6 @@ public:
         GL_CHECK(glUniformMatrix4fv(this->viewLocation, 1, GL_FALSE, glm::value_ptr(view)));
     }
 
-    //////////////////////////////////////////
     // per-object uniforms and rendering of the model (Begin() must be called first)
     void DrawModel(Model& model, const glm::mat4& modelMatrix, const glm::vec3& diffuseColor)
     {

@@ -72,10 +72,6 @@ int main()
     // the off-screen target has the same 2:1 aspect ratio of the wall
     LedWall wall(glm::vec3(-3.0f, 0.0f, -3.0f), glm::vec3(3.0f, 0.0f, -3.0f), glm::vec3(-3.0f, 3.0f, -3.0f), 2048, 1024);
 
-    // naive virtual camera: fixed at the wall centre, standard perspective
-    glm::mat4 wallView = glm::lookAt(glm::vec3(0.0f, 1.5f, -3.0f), glm::vec3(0.0f, 1.5f, -4.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 wallProjection = glm::perspective(glm::radians(45.0f), wall.GetAspect(), 0.1f, 100.0f);
-
     // Projection matrix: recomputed every frame from the framebuffer size
     glm::mat4 projection = glm::mat4(1.0f);
     // View matrix: the camera moves, so we just set to identity now
@@ -105,9 +101,12 @@ int main()
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 
-        // ------- PASS 1: virtual environment rendered into the wall FBO (naive fixed camera) -------
+        // ------- PASS 1: virtual environment rendered into the wall FBO -------
+        // off-axis projection from the camera position (it does not depend on the camera orientation)
+        OffAxisMatrices wallCamera = wall.GetOffAxisMatrices(camera.Position, 0.1f, 100.0f);
+
         wall.BeginCapture();
-        environment.Draw(sceneShader, wallView, wallProjection, lighting);
+        environment.Draw(sceneShader, wallCamera.view, wallCamera.projection, lighting);
         wall.EndCapture();
 
         // ------- PASS 2: screen -------

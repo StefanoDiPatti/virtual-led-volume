@@ -32,7 +32,6 @@ class Skybox
 {
 public:
 
-    //////////////////////////////////////////
     // constructor: Shader Program, cube model, cubemap texture and uniform locations
     // cubemapFolder: folder with the 6 images of the cubemap (with the final '/')
     Skybox(const std::string& cubemapFolder)
@@ -49,7 +48,6 @@ public:
     Skybox(const Skybox&) = delete;
     Skybox& operator=(const Skybox&) = delete;
 
-    //////////////////////////////////////////
     // destructor: we delete the Shader Program and the cubemap
     ~Skybox()
     {
@@ -57,7 +55,6 @@ public:
         GL_CHECK(glDeleteTextures(1, &this->texture));
     }
 
-    //////////////////////////////////////////
     // rendering of the skybox (it must be called after all the other objects of the pass)
     void Draw(const glm::mat4& view, const glm::mat4& projection)
     {

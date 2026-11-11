@@ -25,7 +25,6 @@ class Window
 {
 public:
 
-    //////////////////////////////////////////
     // constructor: GLFW initialization, window and OpenGL context creation
     Window(int width, int height, const char* title)
     {
@@ -71,14 +70,12 @@ public:
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 
-    //////////////////////////////////////////
     // destructor: close and delete the context
     ~Window()
     {
         glfwTerminate();
     }
 
-    //////////////////////////////////////////
     // GLFW handle of the window (used to set the callbacks)
     GLFWwindow* Get() const { return this->window; }
 

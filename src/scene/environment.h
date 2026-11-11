@@ -31,7 +31,6 @@ class VirtualEnvironment
 {
 public:
 
-    //////////////////////////////////////////
     // constructor: models loading, skybox and model matrices (the objects are static)
     // the wall is at z = -3: all the objects are placed behind it (z < -3)
     VirtualEnvironment(const std::string& skyboxFolder)
@@ -49,7 +48,6 @@ public:
         this->sphereModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 1.0f, -8.0f));
     }
 
-    //////////////////////////////////////////
     // rendering of the virtual environment from the given camera
     void Draw(SceneShader& shader, const glm::mat4& view, const glm::mat4& projection, const Lighting& lighting)
     {

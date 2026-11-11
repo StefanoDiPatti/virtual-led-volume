@@ -24,7 +24,6 @@ class WallShader
 {
 public:
 
-    //////////////////////////////////////////
     // constructor: creation of the Shader Program and of the uniform locations
     WallShader(const GLchar* vertexPath, const GLchar* fragmentPath) : shader(vertexPath, fragmentPath)
     {
@@ -38,14 +37,12 @@ public:
     WallShader(const WallShader&) = delete;
     WallShader& operator=(const WallShader&) = delete;
 
-    //////////////////////////////////////////
     // destructor: we delete the Shader Program
     ~WallShader()
     {
         this->shader.Delete();
     }
 
-    //////////////////////////////////////////
     // usage of the Shader Program, texture and transformation matrices
     void Begin(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection, GLuint texture)
     {
