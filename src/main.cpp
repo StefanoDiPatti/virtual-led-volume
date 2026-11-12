@@ -55,8 +55,13 @@ int main()
 
     // we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
     Camera camera(glm::vec3(0.0f, 1.7f, 6.0f), GL_TRUE);
+
+    // cine camera on the stage, 6 m in front of the wall, looking at it (35 mm lens, Full Frame sensor)
+    CineCamera cineCamera(glm::vec3(0.0f, 1.5f, 3.0f), 0.0f, 0.0f, 0.0f, 35.0f, SENSOR_PRESET::FULL_FRAME);
+    std::cout << "Cine camera: " << cineCamera.GetFocalLength() << "mm, vertical FOV: " << glm::degrees(cineCamera.GetVerticalFov()) << "°" << std::endl;
+
     // keyboard and mouse callbacks
-    Input input(window.Get(), camera);
+    Input input(window.Get(), camera, cineCamera);
 
     // enable Z test
     GL_CHECK(glEnable(GL_DEPTH_TEST));
@@ -72,10 +77,6 @@ int main()
     // LED wall 6x3 m standing on the floor at z = -3 (pa lower-left, pb lower-right, pc upper-left)
     // the off-screen target has the same 2:1 aspect ratio of the wall
     LedWall wall(glm::vec3(-3.0f, 0.0f, -3.0f), glm::vec3(3.0f, 0.0f, -3.0f), glm::vec3(-3.0f, 3.0f, -3.0f), 2048, 1024);
-
-    // cine camera on the stage, 6 m in front of the wall, looking at it
-    CineCamera cineCamera(glm::vec3(0.0f, 1.5f, 3.0f), 0.0f, 0.0f, 0.0f, 35.0f, SENSOR_PRESET::FULL_FRAME);
-    std::cout << "Cine camera: " << cineCamera.GetFocalLength() << ", vertical FOV: " << glm::degrees(cineCamera.GetVerticalFov()) << "°" << std::endl;
 
     // Projection matrix: recomputed every frame from the framebuffer size
     glm::mat4 projection = glm::mat4(1.0f);
@@ -101,15 +102,16 @@ int main()
 
         // Check if an I/O event is happening
         window.PollEvents();
-        // we apply FPS camera movements
+        // we apply FPS camera and cine camera movements
         input.ApplyCameraMovements(deltaTime);
+        input.ApplyCineCameraMovements(deltaTime);
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 
         // ------- PASS 1: virtual environment rendered into the wall FBO -------
-        // off-axis projection from the camera position (it does not depend on the camera orientation)
+        // off-axis projection from the cine camera position (it does not depend on its orientation and focal length)
         // near plane small and fixed: all the virtual objects are behind the wall
-        wall.UpdateEye(camera.Position, 0.1f, 100.0f);
+        wall.UpdateEye(cineCamera.GetPosition(), 0.1f, 100.0f);
 
         wall.BeginCapture();
         environment.Draw(sceneShader, wall.GetEyeMatrices().view, wall.GetEyeMatrices().projection, lighting);
@@ -129,28 +131,38 @@ int main()
         GL_CHECK(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
+        // view and projection of the cine camera (what the film camera records)
+        glm::mat4 cineView = cineCamera.GetViewMatrix();
+        glm::mat4 cineProjection = cineCamera.GetProjectionMatrix(0.1f, 100.0f);
+
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)
         {
+            case VIEW_MODE::CINE_CAMERA:
+            {
+                // cine camera view: the stage and the LED wall as recorded by the film camera
+                stage.Draw(sceneShader, cineView, cineProjection, lighting);
+                wall.Draw(cineView, cineProjection);
+                break;
+            }
             case VIEW_MODE::STAGE:
             {
-                // stage view: the physical set and the LED wall showing the content of the FBO
-                // test with cine-camera
-                stage.Draw(sceneShader, cineCamera.GetViewMatrix(), cineCamera.GetProjectionMatrix(0.1f, 100.0f), lighting);
-                wall.Draw(cineCamera.GetViewMatrix(), cineCamera.GetProjectionMatrix(0.1f, 100.0f));
+                // stage view from the free camera: the physical set and the LED wall showing the content of the FBO
+                stage.Draw(sceneShader, view, projection, lighting);
+                wall.Draw(view, projection);
                 break;
             }
             case VIEW_MODE::GROUND_TRUTH:
             {
-                // ground truth: the virtual environment seen directly from the camera
-                environment.Draw(sceneShader, view, projection, lighting);
+                // ground truth: the virtual environment seen directly from the cine camera
+                environment.Draw(sceneShader, cineView, cineProjection, lighting);
                 break;
             }
             case VIEW_MODE::DIFFERENCE:
             {
                 // difference: ground truth first, then the wall subtracted from it (black if they match)
-                environment.Draw(sceneShader, view, projection, lighting);
-                wall.DrawDifference(view, projection);
+                environment.Draw(sceneShader, cineView, cineProjection, lighting);
+                wall.DrawDifference(cineView, cineProjection);
                 break;
             }
             default:

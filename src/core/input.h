@@ -2,7 +2,8 @@
 Input class
 - keyboard and mouse callbacks of the application
 - state of the pressed keys, WASD + mouse movements applied to the camera
-- view mode of the application (E: stage / ground truth / difference)
+- cine camera moves: I/K dolly, J/L truck, U/O pedestal, arrows pan/tilt, Z/X zoom
+- view mode of the application (E: cine camera / stage / ground truth / difference)
 
 N.B.) GLFW accepts only free (or static) functions as callbacks: we store the pointer to the Input instance
 inside the window (glfwSetWindowUserPointer), and the static callbacks retrieve it to call the member functions
@@ -19,9 +20,13 @@ inside the window (glfwSetWindowUserPointer), and the static callbacks retrieve 
 // class to manage the FPS camera
 #include <utils/camera.h>
 
+// class to manage the cine camera
+#include <scene/cine_camera.h>
+
 // view modes of the application
 enum class VIEW_MODE
 {
+    CINE_CAMERA,
     STAGE,
     GROUND_TRUTH,
     DIFFERENCE
@@ -33,7 +38,7 @@ class Input
 public:
 
     // constructor: the instance is related to the window, and the callbacks are set
-    Input(GLFWwindow* window, Camera& camera) : camera(camera)
+    Input(GLFWwindow* window, Camera& camera, CineCamera& cineCamera) : camera(camera), cineCamera(cineCamera)
     {
         // we store the pointer to this instance inside the window, to retrieve it in the static callbacks
         glfwSetWindowUserPointer(window, this);
@@ -71,12 +76,44 @@ public:
             this->camera.ProcessKeyboard(RIGHT, deltaTime);
     }
 
+    // if one of the cine camera keys is pressed, the corresponding move is applied (the code is in scene/cine_camera.h)
+    void ApplyCineCameraMovements(GLfloat deltaTime)
+    {
+        if(this->keys[GLFW_KEY_I])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::DOLLY_IN, deltaTime);
+        if(this->keys[GLFW_KEY_K])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::DOLLY_OUT, deltaTime);
+        if(this->keys[GLFW_KEY_J])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::TRUCK_LEFT, deltaTime);
+        if(this->keys[GLFW_KEY_L])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::TRUCK_RIGHT, deltaTime);
+        if(this->keys[GLFW_KEY_U])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::PEDESTAL_UP, deltaTime);
+        if(this->keys[GLFW_KEY_O])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::PEDESTAL_DOWN, deltaTime);
+        if(this->keys[GLFW_KEY_LEFT])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::PAN_LEFT, deltaTime);
+        if(this->keys[GLFW_KEY_RIGHT])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::PAN_RIGHT, deltaTime);
+        if(this->keys[GLFW_KEY_UP])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::TILT_UP, deltaTime);
+        if(this->keys[GLFW_KEY_DOWN])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::TILT_DOWN, deltaTime);
+        if(this->keys[GLFW_KEY_Z])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::ZOOM_IN, deltaTime);
+        if(this->keys[GLFW_KEY_X])
+            this->cineCamera.ProcessKeyboard(CINE_MOVEMENT::ZOOM_OUT, deltaTime);
+    }
+
     // current view mode
     VIEW_MODE GetViewMode() const { return this->viewMode; }
 
 private:
     // camera moved by the keyboard and mouse events
     Camera& camera;
+
+    // cine camera moved by the keyboard events
+    CineCamera& cineCamera;
 
     // we keep trace of the pressed keys
     bool keys[1024] = {};
@@ -87,7 +124,7 @@ private:
     bool firstMouse = true;
 
     // current view mode
-    VIEW_MODE viewMode = VIEW_MODE::STAGE;
+    VIEW_MODE viewMode = VIEW_MODE::CINE_CAMERA;
 
     // static callbacks: they retrieve the Input instance stored in the window and call its member functions
     static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
@@ -109,11 +146,14 @@ private:
         if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(window, GL_TRUE);
 
-        // if E is pressed, we switch to the next view mode (stage -> ground truth -> difference)
+        // if E is pressed, we switch to the next view mode (cine-camera -> stage -> ground truth -> difference)
         if(key == GLFW_KEY_E && action == GLFW_PRESS)
         {
             switch(viewMode)
             {
+                case VIEW_MODE::CINE_CAMERA:
+                    viewMode = VIEW_MODE::STAGE;
+                    break;
                 case VIEW_MODE::STAGE:
                     viewMode = VIEW_MODE::GROUND_TRUTH;
                     break;
@@ -121,10 +161,10 @@ private:
                     viewMode = VIEW_MODE::DIFFERENCE;
                     break;
                 case VIEW_MODE::DIFFERENCE:
-                    viewMode = VIEW_MODE::STAGE;
+                    viewMode = VIEW_MODE::CINE_CAMERA;
                     break;
                 default:
-                    viewMode = VIEW_MODE::STAGE;
+                    viewMode = VIEW_MODE::CINE_CAMERA;
                     break;
             }
         }
