@@ -40,6 +40,7 @@ positive Z axis points "outside" the screen
 #include <scene/stage.h>
 #include <scene/environment.h>
 #include <scene/led_wall.h>
+#include <scene/cine_camera.h>
 
 // Loader for GLM
 #include <glm/glm.hpp>
@@ -71,6 +72,9 @@ int main()
     // LED wall 6x3 m standing on the floor at z = -3 (pa lower-left, pb lower-right, pc upper-left)
     // the off-screen target has the same 2:1 aspect ratio of the wall
     LedWall wall(glm::vec3(-3.0f, 0.0f, -3.0f), glm::vec3(3.0f, 0.0f, -3.0f), glm::vec3(-3.0f, 3.0f, -3.0f), 2048, 1024);
+
+    // cine camera on the stage, 6 m in front of the wall, looking at it
+    CineCamera cineCamera(glm::vec3(0.0f, 1.5f, 3.0f), 0.0f, 0.0f, 0.0f, 35.0f, SENSOR_PRESET::FULL_FRAME);
 
     // Projection matrix: recomputed every frame from the framebuffer size
     glm::mat4 projection = glm::mat4(1.0f);
@@ -130,8 +134,9 @@ int main()
             case VIEW_MODE::STAGE:
             {
                 // stage view: the physical set and the LED wall showing the content of the FBO
-                stage.Draw(sceneShader, view, projection, lighting);
-                wall.Draw(view, projection);
+                // test with cine-camera
+                stage.Draw(sceneShader, cineCamera.GetViewMatrix(), projection, lighting);
+                wall.Draw(cineCamera.GetViewMatrix(), projection);
                 break;
             }
             case VIEW_MODE::GROUND_TRUTH:
