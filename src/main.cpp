@@ -35,6 +35,7 @@ positive Z axis points "outside" the screen
 #include <render/lighting.h>
 // off-axis projection for the LED wall
 #include <render/offaxis.h>
+#include <render/viewport.h>
 
 // objects of the scene: stage, virtual environment, LED wall
 #include <scene/stage.h>
@@ -140,6 +141,26 @@ int main()
         {
             case VIEW_MODE::CINE_CAMERA:
             {
+                // area of the window with the aspect ratio of the sensor (the image is not stretched)
+                ViewportRect rect = FitAspect(width, height, cineCamera.GetAspect());
+
+                // letterbox: the whole window is cleared to black (the bands)
+                GL_CHECK(glClearColor(0, 0, 0, 1));
+                GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
+
+                // glClear ignores the viewport: we use the scissor test to clear only the camera area
+                GL_CHECK(glEnable(GL_SCISSOR_TEST));
+                GL_CHECK(glScissor(rect.x, rect.y, rect.width, rect.height));
+
+                GL_CHECK(glClearColor(0.2, 0.3, 0.3, 1));
+                GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+                // disabled again, otherwise the next frame clears only this area
+                GL_CHECK(glDisable(GL_SCISSOR_TEST));
+
+                // the rendering is mapped to the camera area
+                GL_CHECK(glViewport(rect.x, rect.y, rect.width, rect.height));
+
                 // cine camera view: the stage and the LED wall as recorded by the film camera
                 stage.Draw(sceneShader, cineView, cineProjection, lighting);
                 wall.Draw(cineView, cineProjection);
