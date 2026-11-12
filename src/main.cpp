@@ -75,6 +75,7 @@ int main()
 
     // cine camera on the stage, 6 m in front of the wall, looking at it
     CineCamera cineCamera(glm::vec3(0.0f, 1.5f, 3.0f), 0.0f, 0.0f, 0.0f, 35.0f, SENSOR_PRESET::FULL_FRAME);
+    std::cout << "Cine camera: " << cineCamera.GetFocalLength() << ", vertical FOV: " << glm::degrees(cineCamera.GetVerticalFov()) << "°" << std::endl;
 
     // Projection matrix: recomputed every frame from the framebuffer size
     glm::mat4 projection = glm::mat4(1.0f);
@@ -135,8 +136,8 @@ int main()
             {
                 // stage view: the physical set and the LED wall showing the content of the FBO
                 // test with cine-camera
-                stage.Draw(sceneShader, cineCamera.GetViewMatrix(), projection, lighting);
-                wall.Draw(cineCamera.GetViewMatrix(), projection);
+                stage.Draw(sceneShader, cineCamera.GetViewMatrix(), cineCamera.GetProjectionMatrix(0.1f, 100.0f), lighting);
+                wall.Draw(cineCamera.GetViewMatrix(), cineCamera.GetProjectionMatrix(0.1f, 100.0f));
                 break;
             }
             case VIEW_MODE::GROUND_TRUTH:

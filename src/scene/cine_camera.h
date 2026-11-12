@@ -3,6 +3,7 @@ CineCamera class
 - tracked film camera on the stage: position and orientation (pan, tilt, roll in degrees, as on a fluid head)
 - optics: focal length and sensor size in millimetres (sensor presets: Full Frame, Super 35)
 - view matrix built with lookAt from the front and up vectors
+- projection matrix from focal length and sensor size
 */
 
 #pragma once
@@ -57,6 +58,14 @@ public:
     float GetFocalLength() const   { return this->focalLength; }
     float GetSensorWidth() const   { return this->sensorWidth; }
     float GetSensorHeight() const  { return this->sensorHeight; }
+
+    // vertical angle of view (radians): FOV = 2 * atan(h / 2f), sensor height and focal length in mm
+    float GetVerticalFov() const   { return 2 * glm::atan(sensorHeight / (2 * focalLength)); }
+    // aspect ratio of the sensor
+    float GetAspect() const        { return sensorWidth / sensorHeight; }
+
+    // projection matrix of the cine camera, from its optics
+    glm::mat4 GetProjectionMatrix(float nearPlane, float farPlane) { return glm::perspective(this->GetVerticalFov(), this->GetAspect(), nearPlane, farPlane); }
 
 private:
     // position and orientation (degrees)
