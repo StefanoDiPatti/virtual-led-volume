@@ -36,6 +36,8 @@ positive Z axis points "outside" the screen
 // off-axis projection for the LED wall
 #include <render/offaxis.h>
 #include <render/viewport.h>
+// lines for the debug visualisation
+#include <render/line_renderer.h>
 
 // objects of the scene: stage, virtual environment, LED wall
 #include <scene/stage.h>
@@ -78,6 +80,9 @@ int main()
     // LED wall 6x3 m standing on the floor at z = -3 (pa lower-left, pb lower-right, pc upper-left)
     // the off-screen target has the same 2:1 aspect ratio of the wall
     LedWall wall(glm::vec3(-3.0f, 0.0f, -3.0f), glm::vec3(3.0f, 0.0f, -3.0f), glm::vec3(-3.0f, 3.0f, -3.0f), 2048, 1024);
+
+    // debug lines, drawn only in the observer views (room for 1024 vertices = 512 segments)
+    LineRenderer lines(1024);
 
     // Projection matrix: recomputed every frame from the framebuffer size
     glm::mat4 projection = glm::mat4(1.0f);
@@ -136,6 +141,17 @@ int main()
         glm::mat4 cineView = cineCamera.GetViewMatrix();
         glm::mat4 cineProjection = cineCamera.GetProjectionMatrix(0.1f, 100.0f);
 
+        // debug lines of the frame: world axes (X red, Y green, Z blue, 1 m long)
+        lines.AddLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        lines.AddLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        lines.AddLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        // outline of the LED wall (yellow)
+        lines.AddLine(wall.GetPa(), wall.GetPb(), glm::vec3(1.0f, 1.0f, 0.0f));
+        lines.AddLine(wall.GetPb(), wall.GetPd(), glm::vec3(1.0f, 1.0f, 0.0f));
+        lines.AddLine(wall.GetPd(), wall.GetPc(), glm::vec3(1.0f, 1.0f, 0.0f));
+        lines.AddLine(wall.GetPc(), wall.GetPa(), glm::vec3(1.0f, 1.0f, 0.0f));
+
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)
         {
@@ -166,6 +182,7 @@ int main()
 
                 stage.Draw(sceneShader, view, observerProjection, lighting);
                 wall.Draw(view, observerProjection);
+                lines.Draw(view, observerProjection);
                 break;
             }
             case VIEW_MODE::CINE_CAMERA:
@@ -193,6 +210,7 @@ int main()
                 // stage view from the free camera: the physical set and the LED wall showing the content of the FBO
                 stage.Draw(sceneShader, view, projection, lighting);
                 wall.Draw(view, projection);
+                lines.Draw(view, projection);
                 break;
             }
             case VIEW_MODE::GROUND_TRUTH:
@@ -211,6 +229,9 @@ int main()
             default:
                 break;
         }
+
+        // the debug lines are added again at every frame
+        lines.Clear();
 
         // double buffering: swapping back and front buffers
         window.SwapBuffers();
