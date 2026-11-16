@@ -142,9 +142,7 @@ int main()
         glm::mat4 cineProjection = cineCamera.GetProjectionMatrix(0.1f, 100.0f);
 
         // debug lines of the frame: world axes (X red, Y green, Z blue, 1 m long)
-        lines.AddLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        lines.AddLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        lines.AddLine(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        lines.AddAxes(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f);
 
         // outline of the LED wall (yellow)
         lines.AddLine(wall.GetPa(), wall.GetPb(), glm::vec3(1.0f, 1.0f, 0.0f));
@@ -155,6 +153,14 @@ int main()
         // frustum of the cine camera (cyan), with a short far plane used only for the visualisation
         std::array<glm::vec3, 8> frustumCorners = cineCamera.GetFrustumCorners(0.1f, 7.0f);
         lines.AddBox(frustumCorners, glm::vec3(0.0f, 1.0f, 1.0f));
+
+        // gizmo of the cine camera: right (red), up (green), viewing direction (blue)
+        lines.AddAxes(cineCamera.GetPosition(), cineCamera.GetRight(), cineCamera.GetUp(), cineCamera.GetFront(), 0.5f);
+        // off-axis frustum of the wall (magenta): from the eye to the wall corners, it depends only on the camera position
+        lines.AddLine(cineCamera.GetPosition(), wall.GetPa(), glm::vec3(1.0f, 0.0f, 1.0f));
+        lines.AddLine(cineCamera.GetPosition(), wall.GetPb(), glm::vec3(1.0f, 0.0f, 1.0f));
+        lines.AddLine(cineCamera.GetPosition(), wall.GetPc(), glm::vec3(1.0f, 0.0f, 1.0f));
+        lines.AddLine(cineCamera.GetPosition(), wall.GetPd(), glm::vec3(1.0f, 0.0f, 1.0f));
 
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)

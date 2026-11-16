@@ -41,7 +41,7 @@ public:
     // constructor: creation of the shader and of the VBO, with room for maxVertices vertices
     LineRenderer(int maxVertices) : maxVertices(maxVertices), shader("shaders/line.vert", "shaders/line.frag")
     {
-        this->SetupBuffers();
+        SetupBuffers();
     }
 
     // the instance owns OpenGL resources: copies are not allowed
@@ -51,8 +51,8 @@ public:
     // destructor: we delete the buffers
     ~LineRenderer()
     {
-        GL_CHECK(glDeleteVertexArrays(1, &this->VAO));
-        GL_CHECK(glDeleteBuffers(1, &this->VBO));
+        GL_CHECK(glDeleteVertexArrays(1, &VAO));
+        GL_CHECK(glDeleteBuffers(1, &VBO));
     }
 
     // we add a segment from a to b (two vertices with the same colour)
@@ -73,10 +73,18 @@ public:
         {
             // next corner of the face (the last one goes back to the first)
             int j = (i + 1) % 4;
-            this->AddLine(corners[i], corners[j], color);
-            this->AddLine(corners[i + 4], corners[j + 4], color);
-            this->AddLine(corners[i], corners[i + 4], color);
+            AddLine(corners[i], corners[j], color);
+            AddLine(corners[i + 4], corners[j + 4], color);
+            AddLine(corners[i], corners[i + 4], color);
         }
+    }
+
+    // we add three axes from the origin (red, green, blue), each one long length (the axes must be unit vectors)
+    void AddAxes(const glm::vec3& origin, const glm::vec3& xAxis, const glm::vec3& yAxis, const glm::vec3& zAxis, float length)
+    {
+        AddLine(origin, origin + xAxis * length, glm::vec3(1.0f, 0.0f, 0.0f));
+        AddLine(origin, origin + yAxis * length, glm::vec3(0.0f, 1.0f, 0.0f));
+        AddLine(origin, origin + zAxis * length, glm::vec3(0.0f, 0.0f, 1.0f));
     }
 
     // we upload the segments of the frame into the VBO and we draw them
@@ -86,10 +94,10 @@ public:
             return;
 
         shader.Begin(view, projection);
-        GL_CHECK(glBindVertexArray(this->VAO));
+        GL_CHECK(glBindVertexArray(VAO));
 
         // the VBO is already allocated: we only copy the vertices of this frame, from the beginning
-        GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, this->VBO));
+        GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, VBO));
         GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(LineVertex), vertices.data()));
 
         // GL_LINES: every pair of vertices is a separate segment
@@ -117,13 +125,13 @@ private:
     // creation of the VAO and of an empty VBO: positions (location 0) and colours (location 1), interleaved
     void SetupBuffers()
     {
-        GL_CHECK(glGenVertexArrays(1, &this->VAO));
-        GL_CHECK(glGenBuffers(1, &this->VBO));
+        GL_CHECK(glGenVertexArrays(1, &VAO));
+        GL_CHECK(glGenBuffers(1, &VBO));
 
         // VAO is made "active"
-        GL_CHECK(glBindVertexArray(this->VAO));
+        GL_CHECK(glBindVertexArray(VAO));
         // we allocate the VBO without data (nullptr): it is filled at every Draw
-        GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, this->VBO));
+        GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, VBO));
         GL_CHECK(glBufferData(GL_ARRAY_BUFFER, maxVertices * sizeof(LineVertex), nullptr,  GL_DYNAMIC_DRAW));
 
         // stride: size of one vertex; the colour starts after the position

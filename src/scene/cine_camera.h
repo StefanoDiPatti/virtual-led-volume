@@ -164,6 +164,11 @@ public:
         return corners;
     }
 
+    // orientation of the cine camera (unit vectors, roll included)
+    glm::vec3 GetFront() const { return this->front; }
+    glm::vec3 GetRight() const { return this->right; }
+    glm::vec3 GetUp()    const { return this->up; }
+
 private:
     // position and orientation (degrees)
     glm::vec3 position = glm::vec3(0.0f);
