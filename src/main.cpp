@@ -139,24 +139,46 @@ int main()
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)
         {
+            case VIEW_MODE::SPLIT:
+            {
+                // two halves of the window: cine camera on the left, observer on the right
+                ViewportRect leftArea = {0, 0, width / 2, height};
+                ViewportRect rightArea = {width / 2, 0, width - width / 2, height};
+
+                // the whole window is cleared to black (the letterbox bands)
+                GL_CHECK(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
+                GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
+
+                // left: cine camera view, fitted to the sensor aspect ratio inside the half
+                ViewportRect camRect = FitAspect(leftArea, cineCamera.GetAspect());
+                ClearArea(camRect, glm::vec3(0.2f, 0.3f, 0.3f));
+                GL_CHECK(glViewport(camRect.x, camRect.y, camRect.width, camRect.height));
+
+                stage.Draw(sceneShader, cineView, cineProjection, lighting);
+                wall.Draw(cineView, cineProjection);
+
+                // right: observer view from the free camera, looking at the stage from outside
+                ClearArea(rightArea, glm::vec3(0.2f, 0.3f, 0.3f));
+                GL_CHECK(glViewport(rightArea.x, rightArea.y, rightArea.width, rightArea.height));
+
+                // aspect ratio of the half, not of the window (otherwise the image is stretched)
+                glm::mat4 observerProjection = glm::perspective(glm::radians(45.0f), (float)rightArea.width / (float)rightArea.height, 0.1f, 100.0f);
+
+                stage.Draw(sceneShader, view, observerProjection, lighting);
+                wall.Draw(view, observerProjection);
+                break;
+            }
             case VIEW_MODE::CINE_CAMERA:
             {
                 // area of the window with the aspect ratio of the sensor (the image is not stretched)
-                ViewportRect rect = FitAspect(width, height, cineCamera.GetAspect());
+                ViewportRect rect = FitAspect({0, 0, width, height}, cineCamera.GetAspect());
 
                 // letterbox: the whole window is cleared to black (the bands)
                 GL_CHECK(glClearColor(0, 0, 0, 1));
                 GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
 
-                // glClear ignores the viewport: we use the scissor test to clear only the camera area
-                GL_CHECK(glEnable(GL_SCISSOR_TEST));
-                GL_CHECK(glScissor(rect.x, rect.y, rect.width, rect.height));
-
-                GL_CHECK(glClearColor(0.2, 0.3, 0.3, 1));
-                GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-                // disabled again, otherwise the next frame clears only this area
-                GL_CHECK(glDisable(GL_SCISSOR_TEST));
+                // we clear only the camera area (glClear ignores the viewport)
+                ClearArea(rect, glm::vec3(0.2f, 0.3f, 0.3f));
 
                 // the rendering is mapped to the camera area
                 GL_CHECK(glViewport(rect.x, rect.y, rect.width, rect.height));

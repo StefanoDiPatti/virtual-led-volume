@@ -26,6 +26,7 @@ inside the window (glfwSetWindowUserPointer), and the static callbacks retrieve 
 // view modes of the application
 enum class VIEW_MODE
 {
+    SPLIT,
     CINE_CAMERA,
     STAGE,
     GROUND_TRUTH,
@@ -124,7 +125,7 @@ private:
     bool firstMouse = true;
 
     // current view mode
-    VIEW_MODE viewMode = VIEW_MODE::CINE_CAMERA;
+    VIEW_MODE viewMode = VIEW_MODE::SPLIT;
 
     // static callbacks: they retrieve the Input instance stored in the window and call its member functions
     static void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
@@ -151,6 +152,9 @@ private:
         {
             switch(viewMode)
             {
+                case VIEW_MODE::SPLIT:
+                    viewMode = VIEW_MODE::CINE_CAMERA;
+                    break;
                 case VIEW_MODE::CINE_CAMERA:
                     viewMode = VIEW_MODE::STAGE;
                     break;
@@ -161,10 +165,10 @@ private:
                     viewMode = VIEW_MODE::DIFFERENCE;
                     break;
                 case VIEW_MODE::DIFFERENCE:
-                    viewMode = VIEW_MODE::CINE_CAMERA;
+                    viewMode = VIEW_MODE::SPLIT;
                     break;
                 default:
-                    viewMode = VIEW_MODE::CINE_CAMERA;
+                    viewMode = VIEW_MODE::SPLIT;
                     break;
             }
         }
