@@ -9,6 +9,8 @@ CineCamera class
 
 #pragma once
 
+#include <array>
+
 // Loader for GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -141,7 +143,26 @@ public:
     float GetAspect() const        { return sensorWidth / sensorHeight; }
 
     // projection matrix of the cine camera, from its optics
-    glm::mat4 GetProjectionMatrix(float nearPlane, float farPlane) { return glm::perspective(this->GetVerticalFov(), this->GetAspect(), nearPlane, farPlane); }
+    glm::mat4 GetProjectionMatrix(float nearPlane, float farPlane) const { return glm::perspective(this->GetVerticalFov(), this->GetAspect(), nearPlane, farPlane); }
+
+    // corners of the frustum in world coordinates (0-3 near, 4-7 far, same counter-clockwise order):
+    // we unproject the 8 corners of the NDC cube with the inverse of projection * view
+    std::array<glm::vec3, 8> GetFrustumCorners(float nearPlane, float farPlane) const
+    {
+        std::array<glm::vec3, 8> corners;
+        glm::mat4 inv = glm::inverse(this->GetProjectionMatrix(nearPlane, farPlane) * this->GetViewMatrix());
+        std::array<glm::vec3, 8> ndcCorners = {glm::vec3(-1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec3(1.0f, 1.0f, -1.0f),  glm::vec3(-1.0f, 1.0f, -1.0f), // near (z = -1)
+                                               glm::vec3(-1.0f, -1.0f,  1.0f),  glm::vec3(1.0f, -1.0f, 1.0f),  glm::vec3(1.0f, 1.0f,  1.0f),  glm::vec3(-1.0f, 1.0f, 1.0f)}; // far (z = +1)
+
+        for(int i = 0; i < 8; i++)
+        {
+            glm::vec4 h = inv * glm::vec4(ndcCorners[i], 1.0f);
+            // perspective divide: after the inverse projection w is not 1
+            corners[i] = glm::vec3(h) / h.w;
+        }
+
+        return corners;
+    }
 
 private:
     // position and orientation (degrees)

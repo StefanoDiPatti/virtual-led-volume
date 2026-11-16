@@ -11,6 +11,8 @@ LineRenderer class
 #include <glm/glm.hpp>
 
 #include <vector>
+// array of corners for AddBox
+#include <array>
 // offsetof, used for the vertex attribute layout
 #include <cstddef>
 
@@ -62,6 +64,19 @@ public:
 
         vertices.emplace_back(a, color);
         vertices.emplace_back(b, color);
+    }
+
+    // we add the 12 edges of a box given its 8 corners (0-3 first face, 4-7 opposite face, same order)
+    void AddBox(const std::array<glm::vec3, 8>& corners, const glm::vec3& color)
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            // next corner of the face (the last one goes back to the first)
+            int j = (i + 1) % 4;
+            this->AddLine(corners[i], corners[j], color);
+            this->AddLine(corners[i + 4], corners[j + 4], color);
+            this->AddLine(corners[i], corners[i + 4], color);
+        }
     }
 
     // we upload the segments of the frame into the VBO and we draw them

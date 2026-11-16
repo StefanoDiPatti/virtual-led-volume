@@ -152,6 +152,10 @@ int main()
         lines.AddLine(wall.GetPd(), wall.GetPc(), glm::vec3(1.0f, 1.0f, 0.0f));
         lines.AddLine(wall.GetPc(), wall.GetPa(), glm::vec3(1.0f, 1.0f, 0.0f));
 
+        // frustum of the cine camera (cyan), with a short far plane used only for the visualisation
+        std::array<glm::vec3, 8> frustumCorners = cineCamera.GetFrustumCorners(0.1f, 7.0f);
+        lines.AddBox(frustumCorners, glm::vec3(0.0f, 1.0f, 1.0f));
+
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)
         {
