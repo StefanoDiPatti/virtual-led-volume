@@ -24,6 +24,7 @@ Gui class
 
 #include <scene/cine_camera.h>
 #include <core/input.h>
+#include <render/line_renderer.h>
 
 /////////////////// Gui class ///////////////////////
 class Gui
@@ -86,8 +87,8 @@ public:
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;                            
     }
 
-    // parameter panel, top left: cine camera settings and view selection
-    void DrawPanel (CineCamera& camera, Input& input)
+    // parameter panel, top left: cine camera settings, view selection, debug lines, keys and frame rate
+    void DrawPanel (CineCamera& camera, Input& input, LineToggles& toggles)
     {
         // initial position only: then the window can be dragged
         ImGui::SetNextWindowPos(ImVec2(GUI_POSITION_X, GUI_POSITION_Y), ImGuiCond_FirstUseEver);
@@ -114,11 +115,13 @@ public:
             ImGui::Text("Tilt %.1f", camera.GetTilt());
         }
 
+        // current state of the input, shown by the radio buttons
+        CONTROL_TARGET target = input.GetControlTarget();
+        VIEW_MODE mode = input.GetViewMode();
+
         if(ImGui::CollapsingHeader("View", ImGuiTreeNodeFlags_DefaultOpen))
         {
             // same effect as the keys 1..5 and Tab
-            VIEW_MODE mode = input.GetViewMode();
-            
             if(ImGui::RadioButton("Split", mode == VIEW_MODE::SPLIT))
                 input.SetViewMode(VIEW_MODE::SPLIT);
             ImGui::SameLine();
@@ -137,13 +140,53 @@ public:
             ImGui::Text("Controls:");
             ImGui::SameLine();
 
-            CONTROL_TARGET target = input.GetControlTarget();
             if(ImGui::RadioButton("Observer", target == CONTROL_TARGET::OBSERVER))
                 input.SetControlTarget(CONTROL_TARGET::OBSERVER);
             ImGui::SameLine();
             if(ImGui::RadioButton("Camera", target == CONTROL_TARGET::CAMERA))
                 input.SetControlTarget(CONTROL_TARGET::CAMERA);
         }
+
+        // groups of debug lines of the observer views: the checkboxes write directly in the toggles
+        if(ImGui::CollapsingHeader("Debug Lines", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::Checkbox("World axes", &toggles.worldAxes);
+            ImGui::Checkbox("Wall frame", &toggles.wallFrame);
+            ImGui::Checkbox("Cine frustum", &toggles.cineFrustum);
+            ImGui::Checkbox("Camera gizmo", &toggles.cameraGizmo);
+            ImGui::Checkbox("Off-axis lines", &toggles.offAxisLines);
+        }
+
+        // table of the commands (closed at start)
+        if(ImGui::CollapsingHeader("Keys"))
+        {
+            static const char* KEYS[][2] = { {"G", "UI mode on / off"},
+                                             {"Tab", "observer / cine camera"},
+                                             {"W A S D E Q", "move (dolly, truck, pedestal)"},
+                                             {"Mouse", "look (pan / tilt)"},
+                                             {"Wheel", "zoom (cine camera)"},
+                                             {"Right click", "look at the subject"},
+                                             {"1 - 5", "views"} };
+
+            // EndTable only if the table has been opened
+            if(ImGui::BeginTable("keys", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+            {
+                for(size_t i = 0; i < sizeof(KEYS) / sizeof(KEYS[0]); i++)
+                {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TextUnformatted(KEYS[i][0]);
+                    ImGui::TableSetColumnIndex(1);
+                    ImGui::TextUnformatted(KEYS[i][1]);
+                }
+                
+                ImGui::EndTable();
+            }
+        }
+
+        // frame rate averaged by ImGui, and frame time (ms) = 1000 / FPS
+        ImGui::Separator();
+        ImGui::Text("%.0f FPS - %.2f ms/frame", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
 
         ImGui::End();
     }

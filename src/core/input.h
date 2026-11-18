@@ -95,7 +95,12 @@ public:
         viewMode = mode;
         PrintState();
     }
-    void SetControlTarget(CONTROL_TARGET target) { controlTarget = target; }
+
+    void SetControlTarget(CONTROL_TARGET target)
+    {
+        controlTarget = target;
+        PrintState();
+    }
 
     // true if the UI mode is active (free cursor)
     bool IsUIMode() const { return this->uiMode; }

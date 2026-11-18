@@ -207,8 +207,7 @@ public:
     // zoom from the GUI, kept inside the range of the lens
     void SetFocalLength(float focal)
     {
-        focalLength = focal;
-        focalLength = glm::clamp(focalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
+        focalLength = glm::clamp(focal, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
     }
 
     // sensor format: it changes the size of the sensor, so the aspect ratio and the field of view
@@ -220,12 +219,12 @@ public:
         switch(sensorPreset)
         {
             case SENSOR_PRESET::FULL_FRAME:
-                this->sensorWidth = FULL_FRAME_SENSOR_WIDTH;
-                this->sensorHeight = FULL_FRAME_SENSOR_HEIGHT;
+                sensorWidth = FULL_FRAME_SENSOR_WIDTH;
+                sensorHeight = FULL_FRAME_SENSOR_HEIGHT;
                 break;
             case SENSOR_PRESET::SUPER_35:
-                this->sensorWidth = SUPER_35_SENSOR_WIDTH;
-                this->sensorHeight = SUPER_35_SENSOR_HEIGHT;
+                sensorWidth = SUPER_35_SENSOR_WIDTH;
+                sensorHeight = SUPER_35_SENSOR_HEIGHT;
                 break;
         }
     }

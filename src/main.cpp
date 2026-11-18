@@ -88,6 +88,9 @@ int main()
     // the off-screen target has the same 2:1 aspect ratio of the wall
     LedWall wall(config::WALL_LOWER_LEFT, config::WALL_LOWER_RIGHT, config::WALL_UPPER_LEFT, WALL_RT_WIDTH, WALL_RT_HEIGHT);
 
+    // groups of debug lines to draw (changed by the GUI panel)
+    LineToggles lineToggles;
+
     // debug lines, drawn only in the observer views
     LineRenderer lines(LINE_MAX_VERTICES);
 
@@ -154,25 +157,40 @@ int main()
         glm::mat4 cineProjection = cineCamera.GetProjectionMatrix(NEAR_PLANE, FAR_PLANE);
 
         // debug lines of the frame: world axes (X red, Y green, Z blue, 1 m long)
-        lines.AddAxes(config::WORLD_ORIGIN, config::WORLD_X, config::WORLD_Y, config::WORLD_Z, WORLD_AXES_LENGTH);
+        if(lineToggles.worldAxes)
+            lines.AddAxes(config::WORLD_ORIGIN, config::WORLD_X, config::WORLD_Y, config::WORLD_Z, WORLD_AXES_LENGTH);
 
         // outline of the LED wall (yellow)
-        lines.AddLine(wall.GetPa(), wall.GetPb(), config::WALL_FRAME_COLOR);
-        lines.AddLine(wall.GetPb(), wall.GetPd(), config::WALL_FRAME_COLOR);
-        lines.AddLine(wall.GetPd(), wall.GetPc(), config::WALL_FRAME_COLOR);
-        lines.AddLine(wall.GetPc(), wall.GetPa(), config::WALL_FRAME_COLOR);
+        if(lineToggles.wallFrame)
+        {
+            lines.AddLine(wall.GetPa(), wall.GetPb(), config::WALL_FRAME_COLOR);
+            lines.AddLine(wall.GetPb(), wall.GetPd(), config::WALL_FRAME_COLOR);
+            lines.AddLine(wall.GetPd(), wall.GetPc(), config::WALL_FRAME_COLOR);
+            lines.AddLine(wall.GetPc(), wall.GetPa(), config::WALL_FRAME_COLOR);
+        }
 
         // frustum of the cine camera (cyan), with a short far plane used only for the visualisation
-        std::array<glm::vec3, 8> frustumCorners = cineCamera.GetFrustumCorners(NEAR_PLANE, FRUSTUM_DRAW_FAR);
-        lines.AddBox(frustumCorners, config::CINE_FRUSTUM_COLOR);
+        if(lineToggles.cineFrustum)
+        {
+            std::array<glm::vec3, 8> frustumCorners = cineCamera.GetFrustumCorners(NEAR_PLANE, FRUSTUM_DRAW_FAR);
+            lines.AddBox(frustumCorners, config::CINE_FRUSTUM_COLOR);
+        }
 
         // gizmo of the cine camera: right (red), up (green), viewing direction (blue)
-        lines.AddAxes(cineCamera.GetPosition(), cineCamera.GetRight(), cineCamera.GetUp(), cineCamera.GetFront(), GIZMO_LENGTH);
+        if(lineToggles.cameraGizmo)
+            lines.AddAxes(cineCamera.GetPosition(), cineCamera.GetRight(), cineCamera.GetUp(), cineCamera.GetFront(), GIZMO_LENGTH);
+
         // off-axis frustum of the wall (magenta): from the eye to the wall corners, it depends only on the camera position
-        lines.AddLine(cineCamera.GetPosition(), wall.GetPa(), config::OFFAXIS_FRUSTUM_COLOR);
-        lines.AddLine(cineCamera.GetPosition(), wall.GetPb(), config::OFFAXIS_FRUSTUM_COLOR);
-        lines.AddLine(cineCamera.GetPosition(), wall.GetPc(), config::OFFAXIS_FRUSTUM_COLOR);
-        lines.AddLine(cineCamera.GetPosition(), wall.GetPd(), config::OFFAXIS_FRUSTUM_COLOR);
+        if(lineToggles.offAxisLines)
+        {
+            lines.AddLine(cineCamera.GetPosition(), wall.GetPa(), config::OFFAXIS_FRUSTUM_COLOR);
+            lines.AddLine(cineCamera.GetPosition(), wall.GetPb(), config::OFFAXIS_FRUSTUM_COLOR);
+            lines.AddLine(cineCamera.GetPosition(), wall.GetPc(), config::OFFAXIS_FRUSTUM_COLOR);
+            lines.AddLine(cineCamera.GetPosition(), wall.GetPd(), config::OFFAXIS_FRUSTUM_COLOR);
+        }
+
+        // widgets of the panel: a change of view is applied in this same frame (the GUI is rendered after the views)
+        gui.DrawPanel(cineCamera, input, lineToggles);
 
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)
@@ -253,7 +271,6 @@ int main()
         }
 
         // the GUI is drawn last, on top of every view
-        gui.DrawPanel(cineCamera, input);
         gui.Render();
 
         // the debug lines are added again at every frame

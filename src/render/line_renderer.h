@@ -24,6 +24,12 @@ LineRenderer class
 // class to manage OpenGL failures
 #include <render/gl_check.h>
 
+// groups of debug lines drawn in the observer views (switched on and off from the GUI)
+struct LineToggles
+{
+    bool worldAxes = true, wallFrame = true, cineFrustum = true, cameraGizmo = true, offAxisLines = true;
+};
+
 // vertex of a line: position in world coordinates (location 0) and colour (location 1)
 struct LineVertex
 {
