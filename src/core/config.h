@@ -14,6 +14,10 @@ config
 #define WINDOW_HEIGHT 1080
 #define WINDOW_TITLE  "virtual-led-volume"
 
+/////////////////// glsl ///////////////////////
+// GLSL version of the shaders of the ImGui OpenGL 3 backend
+#define GLSL_VERSION "#version 410"
+
 /////////////////// paths ///////////////////////
 // paths are relative to the folder where the executable is launched
 #define SCENE_VERT_PATH  "shaders/scene.vert"

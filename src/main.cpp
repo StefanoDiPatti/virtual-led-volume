@@ -23,6 +23,8 @@ positive Z axis points "outside" the screen
 // window, OpenGL context and input management
 #include <core/window.h>
 #include <core/input.h>
+// GUI for the runtime parameters
+#include <core/gui.h>
 // named constants of the application
 #include <core/config.h>
 
@@ -67,6 +69,9 @@ int main()
 
     // keyboard and mouse callbacks
     Input input(window.Get(), camera, cineCamera);
+
+    // GUI, created after Input so that ImGui chains our callbacks
+    Gui gui(window.Get());
 
     // enable Z test
     GL_CHECK(glEnable(GL_DEPTH_TEST));
@@ -130,6 +135,9 @@ int main()
         // window minimised: zero-sized framebuffer, skip the screen pass
         if(width == 0 || height == 0)
             continue;
+
+        // new GUI frame (after the minimised-window check: every NewFrame needs its Render)
+        gui.BeginFrame();
 
         projection = glm::perspective(glm::radians(OBSERVER_FOV), (GLfloat)width / (GLfloat)height, NEAR_PLANE, FAR_PLANE);
         GL_CHECK(glViewport(0, 0, width, height));
@@ -240,6 +248,10 @@ int main()
             default:
                 break;
         }
+
+        // the GUI is drawn last, on top of every view
+        ImGui::ShowDemoWindow();
+        gui.Render();
 
         // the debug lines are added again at every frame
         lines.Clear();
