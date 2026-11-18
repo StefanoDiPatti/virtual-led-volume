@@ -14,13 +14,20 @@ IDIR = external/include/
 # Libraries path
 LDIR = external/libs/linux
 
+# Dear ImGui (core + GLFW and OpenGL backends)
+IMGUI_DIR = external/imgui
+
 # compiler flags:
-CXXFLAGS  = -g -O0 -x c++ -Wall -Wno-invalid-offsetof -std=c++17 -I$(IDIR) -Isrc
+CXXFLAGS  = -g -O0 -x c++ -Wall -Wno-invalid-offsetof -std=c++17 -I$(IDIR) -Isrc -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
 
 # linker flags:
 LDFLAGS = -L$(LDIR) -lglfw3 -lassimp -lz -lminizip -lkubazip -lpoly2tri -lpolyclipping -ldraco -lpugixml
 
-SOURCES = external/include/glad/glad.c src/main.cpp
+IMGUI_SOURCES = $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp \
+                $(IMGUI_DIR)/imgui_widgets.cpp $(IMGUI_DIR)/imgui_demo.cpp \
+                $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
+
+SOURCES = external/include/glad/glad.c src/main.cpp $(IMGUI_SOURCES)
 
 # project headers: most of the code is in header files, so they are dependencies of the executable too
 HEADERS = $(shell find src -name '*.h')

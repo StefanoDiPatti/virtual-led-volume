@@ -18,3 +18,4 @@ make clean
 - The texture and cubemap loading functions in `src/render/texture.h` and the skybox shaders (`shaders/skybox.vert`, `shaders/skybox.frag`) are based on the same laboratory code.
 - Models in `assets/models/` and textures in `assets/textures/` (UV test grid, skybox) come from the course laboratory material.
 - Third-party libraries in `external/`: GLAD, GLFW, GLM, Assimp, stb_image.
+- [Dear ImGui](https://github.com/ocornut/imgui) v1.91.9b by Omar Cornut (MIT license, see `external/imgui/LICENSE.txt`): core files and the GLFW / OpenGL 3 backends in `external/imgui/`, unmodified. `external/include/GLFW` is a symbolic link to `external/include/glfw`, because the backend includes `<GLFW/glfw3.h>`.
