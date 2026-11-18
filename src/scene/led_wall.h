@@ -26,6 +26,9 @@ LedWall class
 // off-axis projection through the wall corners
 #include <render/offaxis.h>
 
+// named constants of the application
+#include <core/config.h>
+
 /////////////////// LED WALL class ///////////////////////
 class LedWall
 {
@@ -35,7 +38,7 @@ public:
     LedWall(const glm::vec3& pa, const glm::vec3& pb, const glm::vec3& pc, int targetWidth, int targetHeight)
         : pa(pa), pb(pb), pc(pc), pd(pb + pc - pa),
           target(targetWidth, targetHeight),
-          shader("shaders/wall.vert", "shaders/wall.frag")
+          shader(WALL_VERT_PATH, WALL_FRAG_PATH)
     {
         this->SetupQuad();
     }

@@ -23,6 +23,8 @@ positive Z axis points "outside" the screen
 // window, OpenGL context and input management
 #include <core/window.h>
 #include <core/input.h>
+// named constants of the application
+#include <core/config.h>
 
 // class to manage the FPS camera
 #include <utils/camera.h>
@@ -54,13 +56,13 @@ int main()
 {
     // the window (and the OpenGL context) is created first, so it is destroyed last,
     // after all the objects owning OpenGL resources
-    Window window(1920, 1080, "virtual-led-volume");
+    Window window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE);
 
     // we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
-    Camera camera(glm::vec3(0.0f, 1.7f, 6.0f), GL_TRUE);
+    Camera camera(config::OBSERVER_START_POSITION, GL_TRUE);
 
-    // cine camera on the stage, 6 m in front of the wall, looking at it (35 mm lens, Full Frame sensor)
-    CineCamera cineCamera(glm::vec3(0.0f, 1.5f, 3.0f), 0.0f, 0.0f, 0.0f, 35.0f, SENSOR_PRESET::FULL_FRAME);
+    // cine camera on the stage, looking at the wall
+    CineCamera cineCamera(config::CINE_START_POSITION, CINE_START_SENSOR);
     std::cout << "Cine camera: " << cineCamera.GetFocalLength() << "mm, vertical FOV: " << glm::degrees(cineCamera.GetVerticalFov()) << "°" << std::endl;
 
     // keyboard and mouse callbacks
@@ -70,19 +72,19 @@ int main()
     GL_CHECK(glEnable(GL_DEPTH_TEST));
 
     // ------- Shaders and Lighting -------
-    SceneShader sceneShader("shaders/scene.vert", "shaders/scene.frag");
+    SceneShader sceneShader(SCENE_VERT_PATH, SCENE_FRAG_PATH);
     Lighting lighting;
 
     // ------- Scene -------
     Stage stage;
-    VirtualEnvironment environment("assets/textures/skybox/");
+    VirtualEnvironment environment(SKYBOX_FOLDER);
 
     // LED wall 6x3 m standing on the floor at z = -3 (pa lower-left, pb lower-right, pc upper-left)
     // the off-screen target has the same 2:1 aspect ratio of the wall
-    LedWall wall(glm::vec3(-3.0f, 0.0f, -3.0f), glm::vec3(3.0f, 0.0f, -3.0f), glm::vec3(-3.0f, 3.0f, -3.0f), 2048, 1024);
+    LedWall wall(config::WALL_LOWER_LEFT, config::WALL_LOWER_RIGHT, config::WALL_UPPER_LEFT, WALL_RT_WIDTH, WALL_RT_HEIGHT);
 
-    // debug lines, drawn only in the observer views (room for 1024 vertices = 512 segments)
-    LineRenderer lines(1024);
+    // debug lines, drawn only in the observer views
+    LineRenderer lines(LINE_MAX_VERTICES);
 
     // Projection matrix: recomputed every frame from the framebuffer size
     glm::mat4 projection = glm::mat4(1.0f);
@@ -116,7 +118,7 @@ int main()
         // ------- PASS 1: virtual environment rendered into the wall FBO -------
         // off-axis projection from the cine camera position (it does not depend on its orientation and focal length)
         // near plane small and fixed: all the virtual objects are behind the wall
-        wall.UpdateEye(cineCamera.GetPosition(), 0.1f, 100.0f);
+        wall.UpdateEye(cineCamera.GetPosition(), NEAR_PLANE, FAR_PLANE);
 
         wall.BeginCapture();
         environment.Draw(sceneShader, wall.GetEyeMatrices().view, wall.GetEyeMatrices().projection, lighting);
@@ -129,37 +131,37 @@ int main()
         if(width == 0 || height == 0)
             continue;
 
-        projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
+        projection = glm::perspective(glm::radians(OBSERVER_FOV), (GLfloat)width / (GLfloat)height, NEAR_PLANE, FAR_PLANE);
         GL_CHECK(glViewport(0, 0, width, height));
 
         // "clear" the frame and z-buffer
-        GL_CHECK(glClearColor(0.2f, 0.3f, 0.3f, 1.0f));
+        GL_CHECK(glClearColor(config::BACKGROUND_COLOR.r, config::BACKGROUND_COLOR.g, config::BACKGROUND_COLOR.b, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
         // view and projection of the cine camera (what the film camera records)
         glm::mat4 cineView = cineCamera.GetViewMatrix();
-        glm::mat4 cineProjection = cineCamera.GetProjectionMatrix(0.1f, 100.0f);
+        glm::mat4 cineProjection = cineCamera.GetProjectionMatrix(NEAR_PLANE, FAR_PLANE);
 
         // debug lines of the frame: world axes (X red, Y green, Z blue, 1 m long)
-        lines.AddAxes(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 1.0f);
+        lines.AddAxes(config::WORLD_ORIGIN, config::WORLD_X, config::WORLD_Y, config::WORLD_Z, WORLD_AXES_LENGTH);
 
         // outline of the LED wall (yellow)
-        lines.AddLine(wall.GetPa(), wall.GetPb(), glm::vec3(1.0f, 1.0f, 0.0f));
-        lines.AddLine(wall.GetPb(), wall.GetPd(), glm::vec3(1.0f, 1.0f, 0.0f));
-        lines.AddLine(wall.GetPd(), wall.GetPc(), glm::vec3(1.0f, 1.0f, 0.0f));
-        lines.AddLine(wall.GetPc(), wall.GetPa(), glm::vec3(1.0f, 1.0f, 0.0f));
+        lines.AddLine(wall.GetPa(), wall.GetPb(), config::WALL_FRAME_COLOR);
+        lines.AddLine(wall.GetPb(), wall.GetPd(), config::WALL_FRAME_COLOR);
+        lines.AddLine(wall.GetPd(), wall.GetPc(), config::WALL_FRAME_COLOR);
+        lines.AddLine(wall.GetPc(), wall.GetPa(), config::WALL_FRAME_COLOR);
 
         // frustum of the cine camera (cyan), with a short far plane used only for the visualisation
-        std::array<glm::vec3, 8> frustumCorners = cineCamera.GetFrustumCorners(0.1f, 7.0f);
-        lines.AddBox(frustumCorners, glm::vec3(0.0f, 1.0f, 1.0f));
+        std::array<glm::vec3, 8> frustumCorners = cineCamera.GetFrustumCorners(NEAR_PLANE, FRUSTUM_DRAW_FAR);
+        lines.AddBox(frustumCorners, config::CINE_FRUSTUM_COLOR);
 
         // gizmo of the cine camera: right (red), up (green), viewing direction (blue)
-        lines.AddAxes(cineCamera.GetPosition(), cineCamera.GetRight(), cineCamera.GetUp(), cineCamera.GetFront(), 0.5f);
+        lines.AddAxes(cineCamera.GetPosition(), cineCamera.GetRight(), cineCamera.GetUp(), cineCamera.GetFront(), GIZMO_LENGTH);
         // off-axis frustum of the wall (magenta): from the eye to the wall corners, it depends only on the camera position
-        lines.AddLine(cineCamera.GetPosition(), wall.GetPa(), glm::vec3(1.0f, 0.0f, 1.0f));
-        lines.AddLine(cineCamera.GetPosition(), wall.GetPb(), glm::vec3(1.0f, 0.0f, 1.0f));
-        lines.AddLine(cineCamera.GetPosition(), wall.GetPc(), glm::vec3(1.0f, 0.0f, 1.0f));
-        lines.AddLine(cineCamera.GetPosition(), wall.GetPd(), glm::vec3(1.0f, 0.0f, 1.0f));
+        lines.AddLine(cineCamera.GetPosition(), wall.GetPa(), config::OFFAXIS_FRUSTUM_COLOR);
+        lines.AddLine(cineCamera.GetPosition(), wall.GetPb(), config::OFFAXIS_FRUSTUM_COLOR);
+        lines.AddLine(cineCamera.GetPosition(), wall.GetPc(), config::OFFAXIS_FRUSTUM_COLOR);
+        lines.AddLine(cineCamera.GetPosition(), wall.GetPd(), config::OFFAXIS_FRUSTUM_COLOR);
 
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)
@@ -171,23 +173,23 @@ int main()
                 ViewportRect rightArea = {width / 2, 0, width - width / 2, height};
 
                 // the whole window is cleared to black (the letterbox bands)
-                GL_CHECK(glClearColor(0.0f, 0.0f, 0.0f, 1.0f));
+                GL_CHECK(glClearColor(config::LETTERBOX_COLOR.r, config::LETTERBOX_COLOR.g, config::LETTERBOX_COLOR.b, 1.0f));
                 GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
 
                 // left: cine camera view, fitted to the sensor aspect ratio inside the half
                 ViewportRect camRect = FitAspect(leftArea, cineCamera.GetAspect());
-                ClearArea(camRect, glm::vec3(0.2f, 0.3f, 0.3f));
+                ClearArea(camRect, config::BACKGROUND_COLOR);
                 GL_CHECK(glViewport(camRect.x, camRect.y, camRect.width, camRect.height));
 
                 stage.Draw(sceneShader, cineView, cineProjection, lighting);
                 wall.Draw(cineView, cineProjection);
 
                 // right: observer view from the free camera, looking at the stage from outside
-                ClearArea(rightArea, glm::vec3(0.2f, 0.3f, 0.3f));
+                ClearArea(rightArea, config::BACKGROUND_COLOR);
                 GL_CHECK(glViewport(rightArea.x, rightArea.y, rightArea.width, rightArea.height));
 
                 // aspect ratio of the half, not of the window (otherwise the image is stretched)
-                glm::mat4 observerProjection = glm::perspective(glm::radians(45.0f), (float)rightArea.width / (float)rightArea.height, 0.1f, 100.0f);
+                glm::mat4 observerProjection = glm::perspective(glm::radians(OBSERVER_FOV), (float)rightArea.width / (float)rightArea.height, NEAR_PLANE, FAR_PLANE);
 
                 stage.Draw(sceneShader, view, observerProjection, lighting);
                 wall.Draw(view, observerProjection);
@@ -200,11 +202,11 @@ int main()
                 ViewportRect rect = FitAspect({0, 0, width, height}, cineCamera.GetAspect());
 
                 // letterbox: the whole window is cleared to black (the bands)
-                GL_CHECK(glClearColor(0, 0, 0, 1));
+                GL_CHECK(glClearColor(config::LETTERBOX_COLOR.r, config::LETTERBOX_COLOR.g, config::LETTERBOX_COLOR.b, 1.0f));
                 GL_CHECK(glClear(GL_COLOR_BUFFER_BIT));
 
                 // we clear only the camera area (glClear ignores the viewport)
-                ClearArea(rect, glm::vec3(0.2f, 0.3f, 0.3f));
+                ClearArea(rect, config::BACKGROUND_COLOR);
 
                 // the rendering is mapped to the camera area
                 GL_CHECK(glViewport(rect.x, rect.y, rect.width, rect.height));

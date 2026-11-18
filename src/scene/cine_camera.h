@@ -16,6 +16,9 @@ CineCamera class
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+// named constants of the application
+#include <core/config.h>
+
 // sensor formats of the camera
 enum class SENSOR_PRESET
 {
@@ -47,26 +50,22 @@ class CineCamera
 {
 public:
 
-    // constructor: position, orientation (degrees), focal length (mm) and sensor format
-    CineCamera(glm::vec3 position, float pan, float tilt, float roll, float focalLength, SENSOR_PRESET sensorPreset)
+    // constructor: position and sensor format (the camera starts level, with the initial focal length below)
+    CineCamera(glm::vec3 position, SENSOR_PRESET sensorPreset)
     {
         this->position = position;
-        this->pan = pan;
-        this->tilt = tilt;
-        this->roll = roll;
-        this->focalLength = focalLength;
         this->sensorPreset = sensorPreset;
 
         // we set the sensor size (mm) from the chosen format
         switch(sensorPreset)
         {
             case SENSOR_PRESET::FULL_FRAME:
-                this->sensorWidth = 36.0f;
-                this->sensorHeight = 24.0f;
+                this->sensorWidth = FULL_FRAME_SENSOR_WIDTH;
+                this->sensorHeight = FULL_FRAME_SENSOR_HEIGHT;
                 break;
             case SENSOR_PRESET::SUPER_35:
-                this->sensorWidth = 24.89f;
-                this->sensorHeight = 18.66f;
+                this->sensorWidth = SUPER_35_SENSOR_WIDTH;
+                this->sensorHeight = SUPER_35_SENSOR_HEIGHT;
                 break;
         }
 
@@ -122,11 +121,11 @@ public:
             // zoom: only the focal length changes (it is read by the projection), limited to the zoom lens range
             case CINE_MOVEMENT::ZOOM_IN:
                 focalLength += zoomSpeed * deltaTime;
-                focalLength = glm::clamp(focalLength, 18.0f, 50.0f);
+                focalLength = glm::clamp(focalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
                 break;
             case CINE_MOVEMENT::ZOOM_OUT:
                 focalLength -= zoomSpeed * deltaTime;
-                focalLength = glm::clamp(focalLength, 18.0f, 50.0f);
+                focalLength = glm::clamp(focalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
                 break;
         }
     }
@@ -147,7 +146,7 @@ public:
     void ProcessScroll(float yoffset)
     {
         focalLength += yoffset * zoomStep;
-        focalLength = glm::clamp(focalLength, 18.0f, 50.0f);
+        focalLength = glm::clamp(focalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
     }
 
     // it turns the camera to look at a point of the stage (roll is not changed)
@@ -157,7 +156,7 @@ public:
         glm::vec3 offset = target - position;
 
         // target on the camera position: the direction is not defined (normalize would give NaN)
-        if(glm::length(offset) < 1e-4f)
+        if(glm::length(offset) < LOOKAT_MIN_DISTANCE)
             return;
 
         glm::vec3 dir = glm::normalize(offset);
@@ -212,13 +211,13 @@ public:
 
 private:
     // position and orientation (degrees)
-    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 position;
     float pan = 0.0f, tilt = 0.0f, roll = 0.0f;
 
     // optics (mm)
     float focalLength = 35.0f;
-    float sensorWidth = 36.0f, sensorHeight = 24.0f;
-    SENSOR_PRESET sensorPreset = SENSOR_PRESET::FULL_FRAME;
+    float sensorWidth, sensorHeight;
+    SENSOR_PRESET sensorPreset;
 
     // speeds of the moves (rotation and zoom speeds are used only by the keyboard moves kept as reference)
     float moveSpeed = 1.0f;         // m/s
@@ -238,10 +237,10 @@ private:
         glm::vec3 worldUp(0.0f, 1.0f, 0.0f);
 
         // we limit the tilt: at +-90 degrees front would be parallel to worldUp and the cross product would be zero
-        if(tilt > 89.0f)
-            tilt = 89.0f;
-        if(tilt < -89.0f)
-            tilt = -89.0f;
+        if(tilt > MAX_TILT)
+            tilt = MAX_TILT;
+        if(tilt < -MAX_TILT)
+            tilt = -MAX_TILT;
 
         float panRad = glm::radians(pan);
         float tiltRad = glm::radians(tilt);

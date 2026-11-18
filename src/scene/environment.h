@@ -26,6 +26,9 @@ VirtualEnvironment class
 #include <render/lighting.h>
 #include <render/skybox.h>
 
+// named constants of the application
+#include <core/config.h>
+
 /////////////////// VIRTUAL ENVIRONMENT class ///////////////////////
 class VirtualEnvironment
 {
@@ -34,18 +37,18 @@ public:
     // constructor: models loading, skybox and model matrices (the objects are static)
     // the wall is at z = -3: all the objects are placed behind it (z < -3)
     VirtualEnvironment(const std::string& skyboxFolder)
-        : cube("assets/models/cube.obj"), sphere("assets/models/sphere.obj"), skybox(skyboxFolder)
+        : cube(CUBE_MODEL_PATH), sphere(SPHERE_MODEL_PATH), skybox(skyboxFolder)
     {
         // far pillar: little parallax
-        this->farPillarModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 3.0f, -15.0f));
-        this->farPillarModelMatrix = glm::scale(this->farPillarModelMatrix, glm::vec3(1.0f, 3.0f, 1.0f));
+        this->farPillarModelMatrix = glm::translate(glm::mat4(1.0f), config::FAR_PILLAR_POSITION);
+        this->farPillarModelMatrix = glm::scale(this->farPillarModelMatrix, config::FAR_PILLAR_SCALE);
 
         // near pillar: close to the wall, strong parallax
-        this->nearPillarModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 1.5f, -5.0f));
-        this->nearPillarModelMatrix = glm::scale(this->nearPillarModelMatrix, glm::vec3(0.4f, 1.5f, 0.4f));
+        this->nearPillarModelMatrix = glm::translate(glm::mat4(1.0f), config::NEAR_PILLAR_POSITION);
+        this->nearPillarModelMatrix = glm::scale(this->nearPillarModelMatrix, config::NEAR_PILLAR_SCALE);
 
         // sphere: medium distance
-        this->sphereModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(1.5f, 1.0f, -8.0f));
+        this->sphereModelMatrix = glm::translate(glm::mat4(1.0f), config::SPHERE_POSITION);
     }
 
     // rendering of the virtual environment from the given camera
@@ -54,13 +57,13 @@ public:
         shader.Begin(view, projection, lighting);
 
         // we render the far pillar
-        shader.DrawModel(this->cube, this->farPillarModelMatrix, this->farPillarColor);
+        shader.DrawModel(this->cube, this->farPillarModelMatrix, config::FAR_PILLAR_COLOR);
 
         // we render the near pillar
-        shader.DrawModel(this->cube, this->nearPillarModelMatrix, this->nearPillarColor);
+        shader.DrawModel(this->cube, this->nearPillarModelMatrix, config::NEAR_PILLAR_COLOR);
 
         // we render the sphere
-        shader.DrawModel(this->sphere, this->sphereModelMatrix, this->sphereColor);
+        shader.DrawModel(this->sphere, this->sphereModelMatrix, config::SPHERE_COLOR);
 
         // the skybox is rendered last
         this->skybox.Draw(view, projection);
@@ -75,9 +78,4 @@ private:
     glm::mat4 farPillarModelMatrix;
     glm::mat4 nearPillarModelMatrix;
     glm::mat4 sphereModelMatrix;
-
-    // diffusive components
-    glm::vec3 farPillarColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    glm::vec3 nearPillarColor = glm::vec3(1.0f, 0.5f, 0.0f);
-    glm::vec3 sphereColor = glm::vec3(1.0f, 1.0f, 0.0f);
 };

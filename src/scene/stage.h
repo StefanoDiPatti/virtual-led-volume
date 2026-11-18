@@ -20,19 +20,22 @@ Stage class
 #include <render/scene_shader.h>
 #include <render/lighting.h>
 
+// named constants of the application
+#include <core/config.h>
+
 /////////////////// STAGE class ///////////////////////
 class Stage
 {
 public:
 
     // constructor: models loading and model matrices (the objects are static)
-    Stage() : plane("assets/models/plane.obj"), subject("assets/models/babyyoda.obj")
+    Stage() : plane(PLANE_MODEL_PATH), subject(SUBJECT_MODEL_PATH)
     {
         // floor: 10x10 m at y = 0
         this->planeModelMatrix = glm::mat4(1.0f);
 
         // subject: the model is too big, we scale it down (~1.45 m)
-        this->subjectModelMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(0.3f, 0.3f, 0.3f));
+        this->subjectModelMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(SUBJECT_SCALE));
     }
 
     // rendering of the stage from the given camera
@@ -41,10 +44,10 @@ public:
         shader.Begin(view, projection, lighting);
 
         // we render the plane
-        shader.DrawModel(this->plane, this->planeModelMatrix, this->planeColor);
+        shader.DrawModel(this->plane, this->planeModelMatrix, config::PLANE_COLOR);
 
         // we render the subject
-        shader.DrawModel(this->subject, this->subjectModelMatrix, this->subjectColor);
+        shader.DrawModel(this->subject, this->subjectModelMatrix, config::SUBJECT_COLOR);
     }
 
 private:
@@ -54,8 +57,4 @@ private:
     // model matrices
     glm::mat4 planeModelMatrix;
     glm::mat4 subjectModelMatrix;
-
-    // diffusive components
-    glm::vec3 planeColor = glm::vec3(0.0f, 0.5f, 0.0f);
-    glm::vec3 subjectColor = glm::vec3(1.0f, 0.0f, 0.0f);
 };

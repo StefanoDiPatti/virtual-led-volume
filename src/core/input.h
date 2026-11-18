@@ -29,6 +29,9 @@ inside the window (glfwSetWindowUserPointer), and the static callbacks retrieve 
 // class to manage the cine camera
 #include <scene/cine_camera.h>
 
+// named constants of the application
+#include <core/config.h>
+
 // target of the WASD + mouse controls (Tab toggles it)
 enum class CONTROL_TARGET
 {
@@ -91,7 +94,7 @@ private:
     CineCamera& camera;
 
     // we keep trace of the pressed keys
-    bool keys[1024] = {};
+    bool keys[MAX_KEYS] = {};
 
     // we need to store the previous mouse position to calculate the offset with the current frame
     GLfloat lastX = 0.0f, lastY = 0.0f;
@@ -207,7 +210,7 @@ private:
         // with this method, we can manage 2 keys pressed at the same time:
         // many I/O managers often consider only 1 key pressed at the time (the first pressed, until it is released)
         // using a boolean array, we can then check and manage all the keys pressed at the same time
-        if(key < 0 || key >= 1024)
+        if(key < 0 || key >= MAX_KEYS)
             return;
 
         if(action == GLFW_PRESS)
@@ -249,14 +252,11 @@ private:
     {
         if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
         {
-            // the subject is in the origin of the stage
-            glm::vec3 target(0.0f, 0.5f, 0.0f);
-
             if(controlTarget == CONTROL_TARGET::CAMERA)
-                camera.LookAt(target);
+                camera.LookAt(config::SUBJECT_TARGET);
             else
             {
-                glm::vec3 dir = glm::normalize(target - observer.Position);
+                glm::vec3 dir = glm::normalize(config::SUBJECT_TARGET - observer.Position);
 
                 // we invert the front formula of the lab camera: front = (cos yaw * cos pitch, sin pitch, sin yaw * cos pitch)
                 observer.Pitch = glm::degrees(glm::asin(dir.y));

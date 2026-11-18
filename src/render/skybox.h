@@ -27,6 +27,9 @@ Skybox class
 // texture loading functions
 #include <render/texture.h>
 
+// named constants of the application
+#include <core/config.h>
+
 /////////////////// SKYBOX class ///////////////////////
 class Skybox
 {
@@ -35,7 +38,7 @@ public:
     // constructor: Shader Program, cube model, cubemap texture and uniform locations
     // cubemapFolder: folder with the 6 images of the cubemap (with the final '/')
     Skybox(const std::string& cubemapFolder)
-        : shader("shaders/skybox.vert", "shaders/skybox.frag"), cube("assets/models/cube.obj")
+        : shader(SKYBOX_VERT_PATH, SKYBOX_FRAG_PATH), cube(CUBE_MODEL_PATH)
     {
         this->texture = LoadTextureCube(cubemapFolder);
 

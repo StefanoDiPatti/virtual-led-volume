@@ -18,6 +18,9 @@ LineRenderer class
 
 // shader of the lines
 #include <render/line_shader.h>
+
+// named constants of the application
+#include <core/config.h>
 // class to manage OpenGL failures
 #include <render/gl_check.h>
 
@@ -39,7 +42,7 @@ class LineRenderer
 {
 public:
     // constructor: creation of the shader and of the VBO, with room for maxVertices vertices
-    LineRenderer(int maxVertices) : maxVertices(maxVertices), shader("shaders/line.vert", "shaders/line.frag")
+    LineRenderer(int maxVertices) : maxVertices(maxVertices), shader(LINE_VERT_PATH, LINE_FRAG_PATH)
     {
         SetupBuffers();
     }
@@ -82,9 +85,9 @@ public:
     // we add three axes from the origin (red, green, blue), each one long length (the axes must be unit vectors)
     void AddAxes(const glm::vec3& origin, const glm::vec3& xAxis, const glm::vec3& yAxis, const glm::vec3& zAxis, float length)
     {
-        AddLine(origin, origin + xAxis * length, glm::vec3(1.0f, 0.0f, 0.0f));
-        AddLine(origin, origin + yAxis * length, glm::vec3(0.0f, 1.0f, 0.0f));
-        AddLine(origin, origin + zAxis * length, glm::vec3(0.0f, 0.0f, 1.0f));
+        AddLine(origin, origin + xAxis * length, config::AXIS_X_COLOR);
+        AddLine(origin, origin + yAxis * length, config::AXIS_Y_COLOR);
+        AddLine(origin, origin + zAxis * length, config::AXIS_Z_COLOR);
     }
 
     // we upload the segments of the frame into the VBO and we draw them

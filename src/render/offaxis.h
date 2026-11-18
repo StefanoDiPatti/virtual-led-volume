@@ -12,6 +12,9 @@ Off-axis projection
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+// named constants of the application
+#include <core/config.h>
+
 /////////////////// OFF-AXIS MATRICES struct ///////////////////////
 struct OffAxisMatrices
 {
@@ -42,8 +45,7 @@ inline OffAxisMatrices OffAxisProjection(const glm::vec3& pa, const glm::vec3& p
 
     // the eye must be in front of the screen: on the screen plane (d = 0) or behind it (d < 0)
     // the extents cannot be computed, so we return a not valid result
-    const float minDistance = 1e-4f;
-    if(d <= minDistance)
+    if(d <= OFFAXIS_MIN_DISTANCE)
     {
         offAxisMatrices.isValid = false;
         return offAxisMatrices;

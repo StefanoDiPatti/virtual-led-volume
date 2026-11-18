@@ -26,6 +26,9 @@ SceneShader class
 // lighting parameters
 #include <render/lighting.h>
 
+// named constants of the application
+#include <core/config.h>
+
 /////////////////// SCENE SHADER class ///////////////////////
 class SceneShader
 {
@@ -72,8 +75,8 @@ public:
 
         // we assign the value to the uniform variables
         GL_CHECK(glUniform3fv(this->pointLightLocation, 1, glm::value_ptr(lighting.lightPosition)));
-        GL_CHECK(glUniform3fv(this->matAmbientLocation, 1, glm::value_ptr(lighting.ambientColor)));
-        GL_CHECK(glUniform3fv(this->matSpecularLocation, 1, glm::value_ptr(lighting.specularColor)));
+        GL_CHECK(glUniform3fv(this->matAmbientLocation, 1, glm::value_ptr(config::AMBIENT_COLOR)));
+        GL_CHECK(glUniform3fv(this->matSpecularLocation, 1, glm::value_ptr(config::SPECULAR_COLOR)));
         GL_CHECK(glUniform1f(this->kaLocation, lighting.Ka));
         GL_CHECK(glUniform1f(this->kdLocation, lighting.Kd));
         GL_CHECK(glUniform1f(this->ksLocation, lighting.Ks));

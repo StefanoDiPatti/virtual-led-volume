@@ -1,7 +1,8 @@
 /*
 Lighting struct
-- parameters of the point light and of the Blinn-Phong illumination model,
-  passed as uniforms to the scene shader
+- position of the light, weights and shininess of the Blinn-Phong illumination model,
+  passed as uniforms to the scene shader (they can change at runtime)
+- colours of the light are named constants (config.h)
 */
 
 #pragma once
@@ -15,12 +16,9 @@ Lighting struct
 /////////////////// LIGHTING struct ///////////////////////
 struct Lighting
 {
-    // position of a pointlight (world coordinates)
+    // position of the point light (world coordinates, metres): 5 m to the right of the subject, 10 m high,
+    // 10 m towards the cameras (the wall is at z = -3). The front of the subject is lit and its shadow falls behind it, towards the wall
     glm::vec3 lightPosition = glm::vec3(5.0f, 10.0f, 10.0f);
-
-    // ambient and specular components
-    glm::vec3 ambientColor = glm::vec3(0.1f, 0.1f, 0.1f);
-    glm::vec3 specularColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
     // weights for the diffusive, specular and ambient components
     GLfloat Kd = 0.5f;
