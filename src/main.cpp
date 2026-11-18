@@ -108,9 +108,8 @@ int main()
 
         // Check if an I/O event is happening
         window.PollEvents();
-        // we apply FPS camera and cine camera movements
-        input.ApplyCameraMovements(deltaTime);
-        input.ApplyCineCameraMovements(deltaTime);
+        // we apply the movements of the active control target (observer or cine camera)
+        input.ApplyMovements(deltaTime);
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 

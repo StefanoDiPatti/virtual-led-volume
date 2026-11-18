@@ -4,7 +4,8 @@ CineCamera class
 - optics: focal length and sensor size in millimetres (sensor presets: Full Frame, Super 35)
 - view matrix built with lookAt from the front and up vectors
 - projection matrix from focal length and sensor size
-- keyboard moves as on a film set: dolly, truck, pedestal, pan, tilt, zoom
+- moves as on a film set: dolly, truck, pedestal (keyboard), pan and tilt (mouse), zoom (scroll wheel)
+- re-centre: the camera can be turned to look at a point of the stage
 */
 
 #pragma once
@@ -24,6 +25,7 @@ enum class SENSOR_PRESET
 
 // moves of the cine camera
 // dolly: forward/backward, truck: left/right, pedestal: up/down, pan/tilt: rotations, zoom: focal length
+// N.B.) pan, tilt and zoom are now driven by mouse and scroll wheel: their keyboard moves are kept as reference
 enum class CINE_MOVEMENT
 {
     DOLLY_IN,
@@ -129,9 +131,48 @@ public:
         }
     }
 
+    // mouse movement: pan and tilt follow the cursor offset (in pixels)
+    // no deltaTime: the offset is already an amount of movement, not a state held in time
+    void ProcessMouseMovement(float xoffset, float yoffset)
+    {
+        pan += xoffset * mouseSensitivity;
+        tilt += yoffset * mouseSensitivity;
+
+        // the tilt is clamped inside UpdateVectors
+        UpdateVectors();
+    }
+
+    // scroll wheel: each notch changes the focal length (zoom), limited to the zoom lens range
+    // no deltaTime: the scroll arrives as discrete events, not as a key held down
+    void ProcessScroll(float yoffset)
+    {
+        focalLength += yoffset * zoomStep;
+        focalLength = glm::clamp(focalLength, 18.0f, 50.0f);
+    }
+
+    // it turns the camera to look at a point of the stage (roll is not changed)
+    // we invert the front formula of UpdateVectors: front.y = sin(tilt), front.x / -front.z = tan(pan)
+    void LookAt(glm::vec3 target)
+    {
+        glm::vec3 offset = target - position;
+
+        // target on the camera position: the direction is not defined (normalize would give NaN)
+        if(glm::length(offset) < 1e-4f)
+            return;
+
+        glm::vec3 dir = glm::normalize(offset);
+
+        // atan2 keeps the right quadrant also when the camera looks backwards
+        tilt = glm::degrees(glm::asin(dir.y));
+        pan = glm::degrees((glm::atan(dir.x, -dir.z)));
+
+        UpdateVectors();
+    }
+
     // it returns the current view matrix
     glm::mat4 GetViewMatrix() const { return glm::lookAt(this->position, this->position + this->front, this->up); }
 
+    // position and optics of the cine camera
     glm::vec3 GetPosition() const  { return this->position; }
     float GetFocalLength() const   { return this->focalLength; }
     float GetSensorWidth() const   { return this->sensorWidth; }
@@ -179,10 +220,12 @@ private:
     float sensorWidth = 36.0f, sensorHeight = 24.0f;
     SENSOR_PRESET sensorPreset = SENSOR_PRESET::FULL_FRAME;
 
-    // speeds of the moves
+    // speeds of the moves (rotation and zoom speeds are used only by the keyboard moves kept as reference)
     float moveSpeed = 1.0f;         // m/s
     float rotationSpeed = 30.0f;    // degrees/s
     float zoomSpeed = 10.0f;        // mm/s
+    float mouseSensitivity = 0.1f;  // degrees/pixel
+    float zoomStep = 2.0f;          // mm/notch
 
     // camera reference system (by default looking towards -Z, at the wall)
     glm::vec3 front = glm::vec3(0.0f, 0.0f, -1.0f);
