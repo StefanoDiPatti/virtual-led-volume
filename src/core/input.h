@@ -86,6 +86,16 @@ public:
 
     // current view mode
     VIEW_MODE GetViewMode() const { return this->viewMode; }
+    // camera that receives WASD + mouse
+    CONTROL_TARGET GetControlTarget() const { return this->controlTarget; }
+
+    // view mode and control target set by the GUI
+    void SetViewMode(VIEW_MODE mode)
+    {
+        viewMode = mode;
+        PrintState();
+    }
+    void SetControlTarget(CONTROL_TARGET target) { controlTarget = target; }
 
     // true if the UI mode is active (free cursor)
     bool IsUIMode() const { return this->uiMode; }

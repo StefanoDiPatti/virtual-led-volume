@@ -54,20 +54,9 @@ public:
     CineCamera(glm::vec3 position, SENSOR_PRESET sensorPreset)
     {
         this->position = position;
-        this->sensorPreset = sensorPreset;
 
-        // we set the sensor size (mm) from the chosen format
-        switch(sensorPreset)
-        {
-            case SENSOR_PRESET::FULL_FRAME:
-                this->sensorWidth = FULL_FRAME_SENSOR_WIDTH;
-                this->sensorHeight = FULL_FRAME_SENSOR_HEIGHT;
-                break;
-            case SENSOR_PRESET::SUPER_35:
-                this->sensorWidth = SUPER_35_SENSOR_WIDTH;
-                this->sensorHeight = SUPER_35_SENSOR_HEIGHT;
-                break;
-        }
+        // sensor size (mm) from the chosen format
+        SetSensorPreset(sensorPreset);
 
         // initialization of the camera reference system
         UpdateVectors();
@@ -208,6 +197,38 @@ public:
     glm::vec3 GetFront() const { return this->front; }
     glm::vec3 GetRight() const { return this->right; }
     glm::vec3 GetUp()    const { return this->up; }
+    // orientation (degrees)
+    float GetPan()       const { return this->pan; }
+    float GetTilt()      const { return this->tilt; }
+
+    // sensor format
+    SENSOR_PRESET GetSensorPreset() const { return this->sensorPreset; }
+
+    // zoom from the GUI, kept inside the range of the lens
+    void SetFocalLength(float focal)
+    {
+        focalLength = focal;
+        focalLength = glm::clamp(focalLength, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH);
+    }
+
+    // sensor format: it changes the size of the sensor, so the aspect ratio and the field of view
+    void SetSensorPreset(SENSOR_PRESET preset)
+    {
+        sensorPreset = preset;
+
+        // we set the sensor size (mm) from the chosen format
+        switch(sensorPreset)
+        {
+            case SENSOR_PRESET::FULL_FRAME:
+                this->sensorWidth = FULL_FRAME_SENSOR_WIDTH;
+                this->sensorHeight = FULL_FRAME_SENSOR_HEIGHT;
+                break;
+            case SENSOR_PRESET::SUPER_35:
+                this->sensorWidth = SUPER_35_SENSOR_WIDTH;
+                this->sensorHeight = SUPER_35_SENSOR_HEIGHT;
+                break;
+        }
+    }
 
 private:
     // position and orientation (degrees)

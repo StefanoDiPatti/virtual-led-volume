@@ -253,7 +253,7 @@ int main()
         }
 
         // the GUI is drawn last, on top of every view
-        ImGui::ShowDemoWindow();
+        gui.DrawPanel(cineCamera, input);
         gui.Render();
 
         // the debug lines are added again at every frame

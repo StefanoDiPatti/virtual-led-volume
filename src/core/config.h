@@ -14,6 +14,11 @@ config
 #define WINDOW_HEIGHT 1080
 #define WINDOW_TITLE  "virtual-led-volume"
 
+/////////////////// GUI  //////////////////////////
+// top left corner of the GUI panel (pixels)
+#define GUI_POSITION_X 10.0f
+#define GUI_POSITION_Y 10.0f
+
 /////////////////// glsl ///////////////////////
 // GLSL version of the shaders of the ImGui OpenGL 3 backend
 #define GLSL_VERSION "#version 410"

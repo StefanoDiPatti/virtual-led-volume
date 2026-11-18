@@ -2,6 +2,7 @@
 Gui class
 - creation and destruction of the Dear ImGui context and of its GLFW / OpenGL 3 backends
 - it opens the Gui frame (BeginFrame) and draws the Gui on top of the scene (Render)
+- parameter panel (DrawPanel): the widgets read the state with the getters and change it with the setters
 */
 
 #pragma once
@@ -20,6 +21,9 @@ Gui class
 #include <core/config.h>
 
 #include <iostream>
+
+#include <scene/cine_camera.h>
+#include <core/input.h>
 
 /////////////////// Gui class ///////////////////////
 class Gui
@@ -80,6 +84,68 @@ public:
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         else
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;                            
+    }
+
+    // parameter panel, top left: cine camera settings and view selection
+    void DrawPanel (CineCamera& camera, Input& input)
+    {
+        // initial position only: then the window can be dragged
+        ImGui::SetNextWindowPos(ImVec2(GUI_POSITION_X, GUI_POSITION_Y), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Virtual Production", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+        if(ImGui::CollapsingHeader("Cine Camera Settings", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            // the widgets work on local copies: the setters apply the limits of the camera
+            float f = camera.GetFocalLength();
+            if(ImGui::SliderFloat("Focal Length", &f, MIN_FOCAL_LENGTH, MAX_FOCAL_LENGTH, "%.1f mm"))
+                camera.SetFocalLength(f);
+
+            int item = (int) camera.GetSensorPreset();
+            
+            if(ImGui::Combo("Sensor", &item, "Full Frame 36x24\0Super 35 24.89x18.66\0\0"))
+                camera.SetSensorPreset((SENSOR_PRESET)item);
+            
+            // read-only values
+            ImGui::Text("Vertical FOV %.1f deg", glm::degrees(camera.GetVerticalFov()));
+            ImGui::Text("Position X %.1f", camera.GetPosition().x);
+            ImGui::Text("Position Y %.1f", camera.GetPosition().y);
+            ImGui::Text("Position Z %.1f", camera.GetPosition().z);
+            ImGui::Text("Pan %.1f", camera.GetPan());
+            ImGui::Text("Tilt %.1f", camera.GetTilt());
+        }
+
+        if(ImGui::CollapsingHeader("View", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            // same effect as the keys 1..5 and Tab
+            VIEW_MODE mode = input.GetViewMode();
+            
+            if(ImGui::RadioButton("Split", mode == VIEW_MODE::SPLIT))
+                input.SetViewMode(VIEW_MODE::SPLIT);
+            ImGui::SameLine();
+            if(ImGui::RadioButton("Cine-Camera", mode == VIEW_MODE::CINE_CAMERA))
+                input.SetViewMode(VIEW_MODE::CINE_CAMERA);
+            ImGui::SameLine();
+            if(ImGui::RadioButton("Stage", mode == VIEW_MODE::STAGE))
+                input.SetViewMode(VIEW_MODE::STAGE);
+            ImGui::SameLine();
+            if(ImGui::RadioButton("Ground Truth", mode == VIEW_MODE::GROUND_TRUTH))
+                input.SetViewMode(VIEW_MODE::GROUND_TRUTH);
+            ImGui::SameLine();
+            if(ImGui::RadioButton("Difference", mode == VIEW_MODE::DIFFERENCE))
+                input.SetViewMode(VIEW_MODE::DIFFERENCE);
+            
+            ImGui::Text("Controls:");
+            ImGui::SameLine();
+
+            CONTROL_TARGET target = input.GetControlTarget();
+            if(ImGui::RadioButton("Observer", target == CONTROL_TARGET::OBSERVER))
+                input.SetControlTarget(CONTROL_TARGET::OBSERVER);
+            ImGui::SameLine();
+            if(ImGui::RadioButton("Camera", target == CONTROL_TARGET::CAMERA))
+                input.SetControlTarget(CONTROL_TARGET::CAMERA);
+        }
+
+        ImGui::End();
     }
 
 };
