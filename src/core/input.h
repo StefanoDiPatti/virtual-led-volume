@@ -5,6 +5,7 @@ Input class
 - control target (Tab): the observer camera or the cine camera receives WASD + mouse (+ E/Q pedestal and scroll zoom for the cine camera)
 - right mouse button: the active target looks again at the subject
 - view mode of the application (keys 1..5: split / cine camera / stage / ground truth / difference)
+- UI mode (G): free cursor, mouse, wheel and buttons are left to the GUI and do not move the cameras
 
 N.B.) GLFW accepts only free (or static) functions as callbacks: we store the pointer to the Input instance
 inside the window (glfwSetWindowUserPointer), and the static callbacks retrieve it to call the member functions
@@ -86,6 +87,9 @@ public:
     // current view mode
     VIEW_MODE GetViewMode() const { return this->viewMode; }
 
+    // true if the UI mode is active (free cursor)
+    bool IsUIMode() const { return this->uiMode; }
+
 private:
     // observer camera: free camera walking in the stage
     Camera& observer;
@@ -103,6 +107,9 @@ private:
 
     // current view mode
     VIEW_MODE viewMode = VIEW_MODE::SPLIT;
+
+    // UI mode: free cursor, the mouse goes to the GUI and not to the cameras
+    bool uiMode = false;
 
     // camera that receives WASD + mouse (the observer at start)
     CONTROL_TARGET controlTarget = CONTROL_TARGET::OBSERVER;
@@ -179,6 +186,20 @@ private:
             PrintState();
         }
 
+        // if G is pressed, we switch between UI mode (free cursor) and camera mode (captured cursor)
+        if(key == GLFW_KEY_G && action == GLFW_PRESS)
+        {
+            uiMode = !uiMode;
+
+            glfwSetInputMode(window, GLFW_CURSOR, uiMode ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+
+            // back to camera mode: the first offset starts again from zero (no jump of the view)
+            if(!uiMode)
+                firstMouse = true;
+
+            PrintState();
+        }
+
         // keys 1..5 select the view mode directly (split, cine camera, stage, ground truth, difference)
         if(key == GLFW_KEY_1 && action == GLFW_PRESS)
         {
@@ -222,6 +243,10 @@ private:
     // mouse events
     void OnMouseMove(double xpos, double ypos)
     {
+        // in UI mode the mouse is used by the GUI
+        if(uiMode)
+            return;
+
         // we move the camera view following the mouse cursor
         // we calculate the offset of the mouse cursor from the position in the last frame
         // when rendering the first frame, we do not have a "previous state" for the mouse, so we set the previous state equal to the initial values (thus, the offset will be = 0)
@@ -250,6 +275,9 @@ private:
     // mouse button events: the right button re-centres the active target on the subject
     void OnMouseButton(int button, int action)
     {
+        if(uiMode)
+            return;
+
         if(button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
         {
             if(controlTarget == CONTROL_TARGET::CAMERA)
@@ -271,6 +299,9 @@ private:
     // scroll events: the wheel zooms the cine camera (the observer has a fixed field of view)
     void OnScroll(double yoffset)
     {
+        if(uiMode)
+            return;
+
         if(controlTarget == CONTROL_TARGET::CAMERA)
             camera.ProcessScroll(yoffset);
     }
@@ -278,7 +309,7 @@ private:
     // it prints the current view mode and control target
     void PrintState() const
     {
-        std::cout << "View: " << ToString(viewMode) << " | Controls: " << ToString(controlTarget) << std::endl;
+        std::cout << "View: " << ToString(viewMode) << " | Controls: " << ToString(controlTarget) << " | UI: "<< (uiMode ? "ON" : "OFF") << std::endl;
     }
 
     // names of the enum values, for the console output

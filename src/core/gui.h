@@ -70,4 +70,16 @@ public:
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
+    // in camera mode ImGui ignores the mouse (the cursor is captured and the panel cannot be clicked by mistake)
+    void SetMouseEnabled(bool enabled)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        // if enabled, clear the bit. Otherwise set it.
+        if(enabled)
+            io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+        else
+            io.ConfigFlags |= ImGuiConfigFlags_NoMouse;                            
+    }
+
 };

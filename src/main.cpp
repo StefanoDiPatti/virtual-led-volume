@@ -136,6 +136,9 @@ int main()
         if(width == 0 || height == 0)
             continue;
 
+        // the GUI uses the mouse only in UI mode (set before the new frame)
+        gui.SetMouseEnabled(input.IsUIMode());
+
         // new GUI frame (after the minimised-window check: every NewFrame needs its Render)
         gui.BeginFrame();
 
