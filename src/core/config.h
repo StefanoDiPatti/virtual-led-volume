@@ -33,6 +33,8 @@ config
 #define LINE_FRAG_PATH   "shaders/line.frag"
 #define SKYBOX_VERT_PATH "shaders/skybox.vert"
 #define SKYBOX_FRAG_PATH "shaders/skybox.frag"
+#define DEPTH_VERT_PATH  "shaders/depth.vert"
+#define DEPTH_FRAG_PATH  "shaders/depth.frag"
 
 #define CUBE_MODEL_PATH    "assets/models/cube.obj"
 #define SPHERE_MODEL_PATH  "assets/models/sphere.obj"
@@ -76,6 +78,15 @@ config
 #define WALL_RT_WIDTH  2048
 #define WALL_RT_HEIGHT 1024
 
+/////////////////// shadows ///////////////////////
+// resolution of the (square) shadow map (pixels)
+#define SHADOW_MAP_SIZE 2048
+// half size of the orthographic volume of the set light (metres): it encloses the 10x10 m stage (half diagonal ~7.07 m)
+#define SHADOW_ORTHO_HALF_SIZE 7.5f
+// near and far planes of the light (metres): the light is 15 m from the target
+#define SHADOW_NEAR 1.0f
+#define SHADOW_FAR  30.0f
+
 /////////////////// debug lines ///////////////////////
 // capacity of the line renderer (2 vertices per segment)
 #define LINE_MAX_VERTICES 1024
@@ -107,6 +118,9 @@ namespace config
     const glm::vec3 CINE_START_POSITION(0.0f, 1.5f, 3.0f);
     // point the active camera looks at when re-centred (right mouse button)
     const glm::vec3 SUBJECT_TARGET(0.0f, 0.5f, 0.0f);
+
+    // point the set light looks at (centre of the stage)
+    const glm::vec3 SHADOW_TARGET(0.0f, 0.0f, 0.0f);
 
     // corners of the LED wall (pd is computed from these three)
     const glm::vec3 WALL_LOWER_LEFT(-3.0f, 0.0f, -3.0f);

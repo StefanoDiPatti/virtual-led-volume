@@ -42,6 +42,8 @@ positive Z axis points "outside" the screen
 #include <render/viewport.h>
 // lines for the debug visualisation
 #include <render/line_renderer.h>
+// depth map of the set light, for the shadows
+#include <render/shadow_map.h>
 
 // objects of the scene: stage, virtual environment, LED wall
 #include <scene/stage.h>
@@ -78,7 +80,10 @@ int main()
 
     // ------- Shaders and Lighting -------
     SceneShader sceneShader(SCENE_VERT_PATH, SCENE_FRAG_PATH);
+    DepthShader depthShader(DEPTH_VERT_PATH, DEPTH_FRAG_PATH);
     Lighting lighting;
+    // shadow map of the set light
+    ShadowMap shadowMap(SHADOW_MAP_SIZE);
 
     // ------- Scene -------
     Stage stage;
@@ -122,6 +127,14 @@ int main()
         input.ApplyMovements(deltaTime);
         // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
+
+        // the light position is a parameter that can change at runtime: we update its matrix every frame
+        shadowMap.UpdateLight(lighting.lightPosition, config::SHADOW_TARGET);
+
+        // ------- PASS 0: depth of the stage seen from the set light -------
+        shadowMap.BeginCapture();
+        stage.DrawDepth(depthShader, shadowMap.GetLightSpaceMatrix());
+        shadowMap.EndCapture();
 
         // ------- PASS 1: virtual environment rendered into the wall FBO -------
         // off-axis projection from the cine camera position (it does not depend on its orientation and focal length)

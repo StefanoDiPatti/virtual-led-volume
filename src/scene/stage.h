@@ -19,6 +19,8 @@ Stage class
 // scene shader and lighting parameters
 #include <render/scene_shader.h>
 #include <render/lighting.h>
+// shader of the shadow pass
+#include <render/depth_shader.h>
 
 // named constants of the application
 #include <core/config.h>
@@ -48,6 +50,18 @@ public:
 
         // we render the subject
         shader.DrawModel(this->subject, this->subjectModelMatrix, config::SUBJECT_COLOR);
+    }
+
+    // rendering of the stage from the set light, depth only (shadow pass): same model matrices of Draw()
+    void DrawDepth(DepthShader& depthShader, const glm::mat4& lightSpaceMatrix)
+    {
+        depthShader.Begin(lightSpaceMatrix);
+
+        // we render the plane
+        depthShader.DrawModel(this->plane, this->planeModelMatrix);
+
+        // we render the subject
+        depthShader.DrawModel(this->subject, this->subjectModelMatrix);
     }
 
 private:
