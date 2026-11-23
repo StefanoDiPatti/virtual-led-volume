@@ -203,7 +203,7 @@ int main()
         }
 
         // widgets of the panel: a change of view is applied in this same frame (the GUI is rendered after the views)
-        gui.DrawPanel(cineCamera, input, lineToggles);
+        gui.DrawPanel(cineCamera, input, lineToggles, lighting);
 
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)
@@ -223,7 +223,7 @@ int main()
                 ClearArea(camRect, config::BACKGROUND_COLOR);
                 GL_CHECK(glViewport(camRect.x, camRect.y, camRect.width, camRect.height));
 
-                stage.Draw(sceneShader, cineView, cineProjection, lighting);
+                stage.Draw(sceneShader, cineView, cineProjection, lighting, shadowMap);
                 wall.Draw(cineView, cineProjection);
 
                 // right: observer view from the free camera, looking at the stage from outside
@@ -233,7 +233,7 @@ int main()
                 // aspect ratio of the half, not of the window (otherwise the image is stretched)
                 glm::mat4 observerProjection = glm::perspective(glm::radians(OBSERVER_FOV), (float)rightArea.width / (float)rightArea.height, NEAR_PLANE, FAR_PLANE);
 
-                stage.Draw(sceneShader, view, observerProjection, lighting);
+                stage.Draw(sceneShader, view, observerProjection, lighting, shadowMap);
                 wall.Draw(view, observerProjection);
                 lines.Draw(view, observerProjection);
                 break;
@@ -254,14 +254,14 @@ int main()
                 GL_CHECK(glViewport(rect.x, rect.y, rect.width, rect.height));
 
                 // cine camera view: the stage and the LED wall as recorded by the film camera
-                stage.Draw(sceneShader, cineView, cineProjection, lighting);
+                stage.Draw(sceneShader, cineView, cineProjection, lighting, shadowMap);
                 wall.Draw(cineView, cineProjection);
                 break;
             }
             case VIEW_MODE::STAGE:
             {
                 // stage view from the free camera: the physical set and the LED wall showing the content of the FBO
-                stage.Draw(sceneShader, view, projection, lighting);
+                stage.Draw(sceneShader, view, projection, lighting, shadowMap);
                 wall.Draw(view, projection);
                 lines.Draw(view, projection);
                 break;

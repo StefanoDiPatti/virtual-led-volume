@@ -3,6 +3,7 @@ Lighting struct
 - position of the light, weights and shininess of the Blinn-Phong illumination model,
   passed as uniforms to the scene shader (they can change at runtime)
 - colours of the light are named constants (config.h)
+- technique used for the shadows of the set light
 */
 
 #pragma once
@@ -12,6 +13,15 @@ Lighting struct
 
 // Loader for GLM
 #include <glm/glm.hpp>
+
+// shadow technique: same order of the shadowMode values in shaders/scene.frag (0..3)
+enum class SHADOW_MODE
+{
+    OFF,
+    NO_BIAS,
+    BIAS,
+    PCF
+};
 
 /////////////////// LIGHTING struct ///////////////////////
 struct Lighting
@@ -27,4 +37,7 @@ struct Lighting
 
     // shininess coefficient for Blinn-Phong shaders
     GLfloat shininess = 25.0f;
+
+    // active shadow technique (it can change at runtime)
+    SHADOW_MODE shadowMode = SHADOW_MODE::PCF;
 };

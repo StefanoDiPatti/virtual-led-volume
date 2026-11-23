@@ -23,8 +23,12 @@ Gui class
 #include <iostream>
 
 #include <scene/cine_camera.h>
+
 #include <core/input.h>
+
 #include <render/line_renderer.h>
+// lighting parameters and shadow technique
+#include <render/lighting.h>
 
 /////////////////// Gui class ///////////////////////
 class Gui
@@ -87,8 +91,8 @@ public:
             io.ConfigFlags |= ImGuiConfigFlags_NoMouse;                            
     }
 
-    // parameter panel, top left: cine camera settings, view selection, debug lines, keys and frame rate
-    void DrawPanel (CineCamera& camera, Input& input, LineToggles& toggles)
+    // parameter panel, top left: cine camera settings, view selection, debug lines, lighting keys and frame rate
+    void DrawPanel (CineCamera& camera, Input& input, LineToggles& toggles, Lighting& lighting)
     {
         // initial position only: then the window can be dragged
         ImGui::SetNextWindowPos(ImVec2(GUI_POSITION_X, GUI_POSITION_Y), ImGuiCond_FirstUseEver);
@@ -145,6 +149,16 @@ public:
             ImGui::SameLine();
             if(ImGui::RadioButton("Camera", target == CONTROL_TARGET::CAMERA))
                 input.SetControlTarget(CONTROL_TARGET::CAMERA);
+        }
+
+        // set light and shadow technique
+        if(ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            ImGui::SliderFloat3("Light Position", &lighting.lightPosition.x, LIGHT_POSITION_MIN, LIGHT_POSITION_MAX, "%.1f m");
+
+            int shadowItem = (int) lighting.shadowMode;
+            if(ImGui::Combo("Shadows", &shadowItem, "Off\0No Bias\0Bias\0PCF 3x3\0\0"))
+                lighting.shadowMode = (SHADOW_MODE)shadowItem;
         }
 
         // groups of debug lines of the observer views: the checkboxes write directly in the toggles

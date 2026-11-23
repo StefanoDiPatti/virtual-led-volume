@@ -20,6 +20,9 @@ uniform mat3 normals;
 // the position of the point light is passed as uniform
 uniform vec3 pointLightPosition;
 
+// light space matrix (projection * view of the set light), for the shadow lookup
+uniform mat4 lightSpaceMatrix;
+
 // light incidence direction (in view coordinates)
 out vec3 lightDir;
 // the transformed normal (in view coordinate) is set as an output variable, to be "passed" to the fragment shader
@@ -30,6 +33,9 @@ out vec3 vNormal;
 // we need to calculate also the reflection vector for each fragment
 // to do this, we need to calculate in the vertex shader the view direction (in view coordinates) for each vertex, and to have it interpolated for each fragment by the rasterization stage
 out vec3 vViewPosition;
+
+// vertex position in the clip space of the set light: interpolated, it is used in the fragment shader to read the shadow map
+out vec4 posLightSpace;
 
 void main()
 {
@@ -49,6 +55,9 @@ void main()
     // light incidence direction (in view coordinate)
     vec4 lightPos = view  * vec4(pointLightPosition, 1.0);
     lightDir = normalize(lightPos.xyz - mvPosition.xyz);
+
+    // the light is not related to the camera: we start from world coordinates (model only, no view)
+    posLightSpace = lightSpaceMatrix * model * hom_position;
 
     // apply the projection matrix
     gl_Position = projection * mvPosition;

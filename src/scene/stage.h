@@ -40,10 +40,10 @@ public:
         this->subjectModelMatrix = glm::scale(glm::mat4(1.0f), glm::vec3(SUBJECT_SCALE));
     }
 
-    // rendering of the stage from the given camera
-    void Draw(SceneShader& shader, const glm::mat4& view, const glm::mat4& projection, const Lighting& lighting)
+    // rendering of the stage from the given camera, with the shadows of the set light
+    void Draw(SceneShader& shader, const glm::mat4& view, const glm::mat4& projection, const Lighting& lighting, const ShadowMap& shadowMap)
     {
-        shader.Begin(view, projection, lighting);
+        shader.Begin(view, projection, lighting, &shadowMap);
 
         // we render the plane
         shader.DrawModel(this->plane, this->planeModelMatrix, config::PLANE_COLOR);

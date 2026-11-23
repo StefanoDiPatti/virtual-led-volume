@@ -4,6 +4,7 @@ SceneShader class
 - the uniform locations are determined once, in the constructor
 - Begin() sets the uniforms shared by all the objects of a pass (camera and lighting),
   DrawModel() sets the per-object uniforms and renders a model
+- with a ShadowMap, Begin() also applies the shadows of the set light
 */
 
 #pragma once
@@ -25,6 +26,9 @@ SceneShader class
 
 // lighting parameters
 #include <render/lighting.h>
+
+// depth map of the set light, for the shadows
+#include <render/shadow_map.h>
 
 // named constants of the application
 #include <core/config.h>
@@ -52,6 +56,11 @@ public:
         this->kdLocation = glCheckUniformLocation(this->shader.Program, "Kd");
         this->ksLocation = glCheckUniformLocation(this->shader.Program, "Ks");
         this->shineLocation = glCheckUniformLocation(this->shader.Program, "shininess");
+
+        // shadow mapping
+        this->lightSpaceLocation = glCheckUniformLocation(this->shader.Program, "lightSpaceMatrix");
+        this->shadowMapLocation = glCheckUniformLocation(this->shader.Program, "shadowMap");
+        this->shadowModeLocation = glCheckUniformLocation(this->shader.Program, "shadowMode");
     }
 
     // the instance owns the Shader Program: copies are not allowed
@@ -65,13 +74,27 @@ public:
     }
 
     // usage of the Shader Program, and uniforms shared by all the objects rendered with the same camera
-    void Begin(const glm::mat4& view, const glm::mat4& projection, const Lighting& lighting)
+    void Begin(const glm::mat4& view, const glm::mat4& projection, const Lighting& lighting, const ShadowMap* shadowMap = nullptr)
     {
         // the view matrix is stored, because it is needed to compute the normal matrix of each object
         this->view = view;
 
         // usage of Shader Program as part of the current rendering process
         this->shader.Use();
+
+        // shadow map of the set light: we bind it to its texture unit, and the sampler reads from that unit
+        if(shadowMap != nullptr)
+        {
+            GL_CHECK(glActiveTexture(GL_TEXTURE0 + SHADOW_TEXTURE_UNIT));
+            GL_CHECK(glBindTexture(GL_TEXTURE_2D, shadowMap->GetDepthTexture()));
+            GL_CHECK(glUniform1i(this->shadowMapLocation, SHADOW_TEXTURE_UNIT));
+            GL_CHECK(glUniformMatrix4fv(this->lightSpaceLocation, 1, GL_FALSE, glm::value_ptr(shadowMap->GetLightSpaceMatrix())));
+            GL_CHECK(glUniform1i(this->shadowModeLocation, (int)lighting.shadowMode));
+        }
+        // no shadow map (e.g. virtual environment): shadows disabled. The uniform must be reset,
+        // otherwise the value set by the previous Begin() is kept by the Shader Program
+        else
+            GL_CHECK(glUniform1i(this->shadowModeLocation, (int)SHADOW_MODE::OFF));
 
         // we assign the value to the uniform variables
         GL_CHECK(glUniform3fv(this->pointLightLocation, 1, glm::value_ptr(lighting.lightPosition)));
@@ -111,4 +134,5 @@ private:
     GLint modelLocation, viewLocation, projectionLocation, normalsLocation;
     GLint pointLightLocation, matDiffuseLocation, matAmbientLocation, matSpecularLocation;
     GLint kdLocation, kaLocation, ksLocation, shineLocation;
+    GLint lightSpaceLocation, shadowMapLocation, shadowModeLocation;
 };

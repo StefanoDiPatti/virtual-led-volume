@@ -86,6 +86,12 @@ config
 // near and far planes of the light (metres): the light is 15 m from the target
 #define SHADOW_NEAR 1.0f
 #define SHADOW_FAR  30.0f
+// texture unit of the shadow map in the scene shader (unit 0 is used by the wall and the skybox)
+#define SHADOW_TEXTURE_UNIT 1
+
+// limits of the light position slider in the GUI (metres): the light stays above and around the 10x10 m stage
+#define LIGHT_POSITION_MIN -15.0f
+#define LIGHT_POSITION_MAX  15.0f
 
 /////////////////// debug lines ///////////////////////
 // capacity of the line renderer (2 vertices per segment)
