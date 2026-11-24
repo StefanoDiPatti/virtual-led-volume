@@ -4,7 +4,6 @@ positive X axis points right
 positive Y axis points up
 positive Z axis points "outside" the screen
 
-
                               Y
                               |
                               |
@@ -62,7 +61,6 @@ int main()
     // after all the objects owning OpenGL resources
     Window window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE);
 
-    // we create a camera. We pass the initial position as a parameter to the constructor. The last boolean tells that we want a camera "anchored" to the ground
     Camera camera(config::OBSERVER_START_POSITION, GL_TRUE);
 
     // cine camera on the stage, looking at the wall
@@ -75,7 +73,6 @@ int main()
     // GUI, created after Input so that ImGui chains our callbacks
     Gui gui(window.Get());
 
-    // enable Z test
     GL_CHECK(glEnable(GL_DEPTH_TEST));
 
     // ------- Shaders and Lighting -------
@@ -101,31 +98,23 @@ int main()
 
     // Projection matrix: recomputed every frame from the framebuffer size
     glm::mat4 projection = glm::mat4(1.0f);
-    // View matrix: the camera moves, so we just set to identity now
     glm::mat4 view = glm::mat4(1.0f);
 
-    // size of the framebuffer of the window
     int width, height;
 
-    // parameters for time calculation
     GLfloat deltaTime = 0.0f;
     GLfloat lastFrame = 0.0f;
 
     /////////////////// RENDERING LOOP ///////////////////////
-    // this code is executed at each frame
     while(!window.ShouldClose())
     {
-        // we determine the time passed from the beginning
-        // and we calculate time difference between current frame rendering and the previous one
         GLfloat currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // Check if an I/O event is happening
         window.PollEvents();
         // we apply the movements of the active control target (observer or cine camera)
         input.ApplyMovements(deltaTime);
-        // View matrix (=camera): position, view direction, camera "up" vector
         view = camera.GetViewMatrix();
 
         // the light position is a parameter that can change at runtime: we update its matrix every frame
@@ -170,7 +159,6 @@ int main()
         projection = glm::perspective(glm::radians(OBSERVER_FOV), (GLfloat)width / (GLfloat)height, NEAR_PLANE, FAR_PLANE);
         GL_CHECK(glViewport(0, 0, width, height));
 
-        // "clear" the frame and z-buffer
         GL_CHECK(glClearColor(config::BACKGROUND_COLOR.r, config::BACKGROUND_COLOR.g, config::BACKGROUND_COLOR.b, 1.0f));
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
@@ -262,17 +250,14 @@ int main()
                 // we clear only the camera area (glClear ignores the viewport)
                 ClearArea(rect, config::BACKGROUND_COLOR);
 
-                // the rendering is mapped to the camera area
                 GL_CHECK(glViewport(rect.x, rect.y, rect.width, rect.height));
 
-                // cine camera view: the stage and the LED wall as recorded by the film camera
                 stage.Draw(sceneShader, cineView, cineProjection, lighting, shadowMap);
                 wall.Draw(cineView, cineProjection);
                 break;
             }
             case VIEW_MODE::STAGE:
             {
-                // stage view from the free camera: the physical set and the LED wall showing the content of the FBO
                 stage.Draw(sceneShader, view, projection, lighting, shadowMap);
                 wall.Draw(view, projection);
                 lines.Draw(view, projection);
@@ -301,7 +286,6 @@ int main()
         // the debug lines are added again at every frame
         lines.Clear();
 
-        // double buffering: swapping back and front buffers
         window.SwapBuffers();
     }
 

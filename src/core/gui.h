@@ -76,7 +76,7 @@ public:
         if(enabled)
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         else
-            io.ConfigFlags |= ImGuiConfigFlags_NoMouse;                            
+            io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
     }
 
     // parameter panel, top left: cine camera settings, view selection, debug lines, lighting keys and frame rate
@@ -139,6 +139,10 @@ public:
             int wallItem = (int)wall.GetContent();
             if(ImGui::Combo("Wall Content", &wallItem, "Inner\0Outer\0Inner + Outer\0\0"))
                 wall.SetContent((WALL_CONTENT)wallItem);
+
+            bool ledPanel = wall.GetLedPanel();
+            if(ImGui::Checkbox("LED Panel", &ledPanel))
+                wall.SetLedPanel(ledPanel);
         }
 
         if(ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))

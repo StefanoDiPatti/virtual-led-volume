@@ -38,12 +38,19 @@ public:
         this->marginLocation = glCheckUniformLocation(this->shader.Program, "innerMargin");
         this->blendLocation = glCheckUniformLocation(this->shader.Program, "innerBlend");
 
-        // samplers, overscan and soft edge never change: we set them once
+        this->ledCountLocation = glCheckUniformLocation(this->shader.Program, "ledCount");
+        this->ledRadiusLocation = glCheckUniformLocation(this->shader.Program, "ledRadius");
+        this->ledPanelLocation = glCheckUniformLocation(this->shader.Program, "ledPanel");
+
+        // samplers, overscan, soft edge and LED grid never change: we set them once
         this->shader.Use();
+
         GL_CHECK(glUniform1i(this->innerTextureLocation, WALL_INNER_TEXTURE_UNIT));
         GL_CHECK(glUniform1i(this->outerTextureLocation, WALL_OUTER_TEXTURE_UNIT));
         GL_CHECK(glUniform1f(this->marginLocation, INNER_FRUSTUM_MARGIN));
         GL_CHECK(glUniform1f(this->blendLocation, INNER_FRUSTUM_BLEND));
+        GL_CHECK(glUniform2f(this->ledCountLocation, (GLfloat)WALL_RT_WIDTH, (GLfloat)WALL_RT_HEIGHT));
+        GL_CHECK(glUniform1f(this->ledRadiusLocation, LED_RADIUS));
     }
 
     WallShader(const WallShader&) = delete;
@@ -55,7 +62,7 @@ public:
     }
 
     // usage of the Shader Program, texture and transformation matrices
-    void Begin(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection, GLuint innerTexture, GLuint outerTexture, const glm::mat4& cameraViewProjection, WALL_CONTENT content)
+    void Begin(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection, GLuint innerTexture, GLuint outerTexture, const glm::mat4& cameraViewProjection, WALL_CONTENT content, bool ledPanel)
     {
         this->shader.Use();
 
@@ -70,6 +77,8 @@ public:
         GL_CHECK(glUniformMatrix4fv(this->cameraViewProjectionLocation, 1, GL_FALSE, glm::value_ptr(cameraViewProjection)));
         GL_CHECK(glUniform1i(this->contentLocation, (int)content));
 
+        GL_CHECK(glUniform1i(this->ledPanelLocation, ledPanel));
+
         GL_CHECK(glUniformMatrix4fv(this->modelLocation, 1, GL_FALSE, glm::value_ptr(model)));
         GL_CHECK(glUniformMatrix4fv(this->viewLocation, 1, GL_FALSE, glm::value_ptr(view)));
         GL_CHECK(glUniformMatrix4fv(this->projectionLocation, 1, GL_FALSE, glm::value_ptr(projection)));
@@ -78,5 +87,7 @@ public:
 private:
     Shader shader;
 
-    GLint modelLocation, viewLocation, projectionLocation, innerTextureLocation, outerTextureLocation, cameraViewProjectionLocation, contentLocation, marginLocation, blendLocation;
+    GLint modelLocation, viewLocation, projectionLocation, innerTextureLocation, outerTextureLocation,
+            cameraViewProjectionLocation, contentLocation, marginLocation, blendLocation,
+            ledCountLocation, ledRadiusLocation, ledPanelLocation;
 };

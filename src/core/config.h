@@ -90,6 +90,8 @@ config
 #define INNER_FRUSTUM_MARGIN 0.1f
 // width of the soft edge between inner and outer frustum (NDC)
 #define INNER_FRUSTUM_BLEND 0.1f
+// radius of an LED inside its cell (cell side = 1, one LED per texel: pitch 6 m / 2048 = 2.93 mm)
+#define LED_RADIUS 0.35f
 
 /////////////////// shadows ///////////////////////
 // resolution of the (square) shadow map (pixels)

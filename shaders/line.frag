@@ -1,6 +1,5 @@
 #version 410 core
 
-// output shader variable
 out vec4 colorFrag;
 
 // colour of the line, from the vertex shader (unlit)

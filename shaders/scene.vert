@@ -1,17 +1,10 @@
 #version 410 core
 
-// vertex position in object coordinates
 layout (location = 0) in vec3 position;
-// vertex normal in object coordinate
 layout (location = 1) in vec3 normal;
-// the numbers used for the location in the layout qualifier are the positions of the vertex attribute
-// as defined in the Mesh class
 
-// model matrix
 uniform mat4 model;
-// view matrix
 uniform mat4 view;
-// projection matrix
 uniform mat4 projection;
 
 // normals transformation matrix (= transpose of the inverse of the model-view matrix)
@@ -27,13 +20,8 @@ uniform mat4 lightSpaceMatrix;
 // light incidence direction (in view coordinates)
 out vec3 lightDir;
 out vec3 wallLightDir;
-// the transformed normal (in view coordinate) is set as an output variable, to be "passed" to the fragment shader
-// this means that the normal values in each vertex will be interpolated on each fragment created during rasterization between two vertices
 out vec3 vNormal;
 
-// in the subroutines in fragment shader where specular reflection is considered,
-// we need to calculate also the reflection vector for each fragment
-// to do this, we need to calculate in the vertex shader the view direction (in view coordinates) for each vertex, and to have it interpolated for each fragment by the rasterization stage
 out vec3 vViewPosition;
 
 // vertex position in the clip space of the set light: interpolated, it is used in the fragment shader to read the shadow map
@@ -41,26 +29,20 @@ out vec4 posLightSpace;
 
 void main()
 {
-    // transformations are applied to each vertex
     vec4 hom_position = vec4(position, 1.0f);
 
-    // vertex position in ModelView coordinate (see the last line for the application of projection)
-    // when I need to use coordinates in camera coordinates, I need to split the application of model and view transformations from the projection transformations
     vec4 mvPosition = view * model * hom_position;
 
     // view direction, negated to have vector from the vertex to the camera
     vViewPosition = -mvPosition.xyz;
 
-    // transformations are applied to the normal
     vNormal = normalize(normals * normal);
 
-    // light incidence direction (in view coordinate)
     lightDir = normalize(-(mat3(view) * lightDirection));
     wallLightDir = normalize(-(mat3(view) * wallLightDirection));
 
     // the light is not related to the camera: we start from world coordinates (model only, no view)
     posLightSpace = lightSpaceMatrix * model * hom_position;
 
-    // apply the projection matrix
     gl_Position = projection * mvPosition;
 }

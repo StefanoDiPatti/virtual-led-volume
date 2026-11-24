@@ -1,9 +1,7 @@
 #version 410 core
 
-// vertex position in object coordinates
 layout (location = 0) in vec3 position;
 
-// model matrix
 uniform mat4 model;
 
 // light space matrix (= projection * view of the set light): from world coordinates to the clip space of the light

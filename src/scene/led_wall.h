@@ -67,7 +67,7 @@ public:
     void Draw(const glm::mat4& view, const glm::mat4& projection)
     {
         // the vertices are already in world coordinates; the shader chooses inner or outer per fragment
-        this->shader.Begin(glm::mat4(1.0f), view, projection, this->target.GetColorTexture(), this->outerTarget.GetColorTexture(), this->cameraViewProjection, this->content);
+        this->shader.Begin(glm::mat4(1.0f), view, projection, this->target.GetColorTexture(), this->outerTarget.GetColorTexture(), this->cameraViewProjection, this->content, this->ledPanel);
 
         GL_CHECK(glBindVertexArray(this->VAO));
         GL_CHECK(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
@@ -112,13 +112,16 @@ public:
     glm::vec3 GetNormal() const { return glm::normalize(glm::cross(this->pb - this->pa, this->pc - this->pa)); }
 
     WALL_CONTENT GetContent() const        { return this->content; }
-    void SetContent(WALL_CONTENT content)  { this->content = content; }
-    void SetCameraViewProjection(const glm::mat4& viewProjection) { this->cameraViewProjection = viewProjection; }
+    bool GetLedPanel()        const        { return this->ledPanel; }
 
     const glm::vec3& GetPa() const { return this->pa; }
     const glm::vec3& GetPb() const { return this->pb; }
     const glm::vec3& GetPc() const { return this->pc; }
     const glm::vec3& GetPd() const { return this->pd; }
+
+    void SetContent(WALL_CONTENT content)  { this->content = content; }
+    void SetLedPanel(bool ledPanel)        { this->ledPanel = ledPanel; }
+    void SetCameraViewProjection(const glm::mat4& viewProjection) { this->cameraViewProjection = viewProjection; }
 
 private:
     glm::vec3 pa, pb, pc, pd;
@@ -131,6 +134,8 @@ private:
     glm::mat4 cameraViewProjection = glm::mat4(1.0f);
 
     WALL_CONTENT content = WALL_CONTENT::COMPOSITE;
+
+    bool ledPanel = false;
 
     // off-screen target for the virtual environment (inner frustum)
     RenderTarget target;
