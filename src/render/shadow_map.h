@@ -2,6 +2,7 @@
 ShadowMap class
 - depth-only FBO: the scene seen from the set light, used to compute the shadows
 - light space matrix (orthographic projection, directional light)
+- sampler object for hardware PCF (depth comparison done by the texture unit)
 */
 
 #pragma once
@@ -48,6 +49,24 @@ public:
         GL_CHECK(glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor));
         GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
 
+        // sampler object for hardware PCF: it reads the same depth texture with different parameters,
+        // only on the texture unit it is bound to (the texture keeps NEAREST and no comparison for the other modes)
+        GL_CHECK(glGenSamplers(1, &this->hardwareSampler));
+
+        // linear filtering: the results of the comparisons with the 2x2 nearest texels are blended bilinearly
+        GL_CHECK(glSamplerParameteri(this->hardwareSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+        GL_CHECK(glSamplerParameteri(this->hardwareSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+
+        // outside the map: border depth 1, never in shadow (as for the texture)
+        GL_CHECK(glSamplerParameteri(this->hardwareSampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
+        GL_CHECK(glSamplerParameteri(this->hardwareSampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
+
+        GL_CHECK(glSamplerParameterfv(this->hardwareSampler, GL_TEXTURE_BORDER_COLOR, borderColor));
+
+        // texture() returns the result of the comparison (1 if reference <= stored depth, i.e. lit) instead of the depth
+        GL_CHECK(glSamplerParameteri(this->hardwareSampler, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
+        GL_CHECK(glSamplerParameteri(this->hardwareSampler, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL));
+
         // FBO with the depth texture as depth attachment
         GL_CHECK(glGenFramebuffers(1, &this->FBO));
         GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, this->FBO));
@@ -72,6 +91,7 @@ public:
     {
         GL_CHECK(glDeleteFramebuffers(1, &this->FBO));
         GL_CHECK(glDeleteTextures(1, &this->depthTexture));
+        GL_CHECK(glDeleteSamplers(1, &this->hardwareSampler));
     }
 
     // light space matrix: from world coordinates to the clip space of the light
@@ -105,11 +125,12 @@ public:
     }
 
     GLuint    GetDepthTexture()     const { return this->depthTexture; }
+    GLuint    GetHardwareSampler()  const { return this->hardwareSampler; }
     glm::mat4 GetLightSpaceMatrix() const { return this->lightSpaceMatrix; }
 
 private:
 
-    GLuint FBO = 0, depthTexture = 0;
+    GLuint FBO = 0, depthTexture = 0, hardwareSampler = 0;
     // resolution of the (square) shadow map
     int size = 0;
     glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);

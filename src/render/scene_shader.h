@@ -61,6 +61,14 @@ public:
         this->lightSpaceLocation = glCheckUniformLocation(this->shader.Program, "lightSpaceMatrix");
         this->shadowMapLocation = glCheckUniformLocation(this->shader.Program, "shadowMap");
         this->shadowModeLocation = glCheckUniformLocation(this->shader.Program, "shadowMode");
+        this->shadowMapHardwareLocation = glCheckUniformLocation(this->shader.Program, "shadowMapHardware");
+
+        this->shader.Use();
+
+        // the samplers always read from the same texture units: we set them once. Two samplers of different type
+        // on the same unit (both 0 by default) give GL_INVALID_OPERATION when drawing
+        GL_CHECK(glUniform1i(this->shadowMapLocation, SHADOW_TEXTURE_UNIT));
+        GL_CHECK(glUniform1i(this->shadowMapHardwareLocation, SHADOW_HARDWARE_TEXTURE_UNIT));
     }
 
     // the instance owns the Shader Program: copies are not allowed
@@ -87,7 +95,12 @@ public:
         {
             GL_CHECK(glActiveTexture(GL_TEXTURE0 + SHADOW_TEXTURE_UNIT));
             GL_CHECK(glBindTexture(GL_TEXTURE_2D, shadowMap->GetDepthTexture()));
-            GL_CHECK(glUniform1i(this->shadowMapLocation, SHADOW_TEXTURE_UNIT));
+
+            // the same depth texture on a second unit, read through the hardware PCF sampler
+            GL_CHECK(glActiveTexture(GL_TEXTURE0 + SHADOW_HARDWARE_TEXTURE_UNIT));
+            GL_CHECK(glBindTexture(GL_TEXTURE_2D, shadowMap->GetDepthTexture()));
+            GL_CHECK(glBindSampler(SHADOW_HARDWARE_TEXTURE_UNIT, shadowMap->GetHardwareSampler()));
+
             GL_CHECK(glUniformMatrix4fv(this->lightSpaceLocation, 1, GL_FALSE, glm::value_ptr(shadowMap->GetLightSpaceMatrix())));
             GL_CHECK(glUniform1i(this->shadowModeLocation, (int)lighting.shadowMode));
         }
@@ -137,5 +150,5 @@ private:
     GLint modelLocation, viewLocation, projectionLocation, normalsLocation;
     GLint lightDirectionLocation, matDiffuseLocation, matAmbientLocation, matSpecularLocation;
     GLint kdLocation, kaLocation, ksLocation, shineLocation;
-    GLint lightSpaceLocation, shadowMapLocation, shadowModeLocation;
+    GLint lightSpaceLocation, shadowMapLocation, shadowModeLocation, shadowMapHardwareLocation;
 };

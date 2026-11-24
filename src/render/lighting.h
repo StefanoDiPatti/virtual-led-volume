@@ -14,13 +14,14 @@ Lighting struct
 // Loader for GLM
 #include <glm/glm.hpp>
 
-// shadow technique: same order of the shadowMode values in shaders/scene.frag (0..3)
+// shadow technique: same order of the shadowMode values in shaders/scene.frag (0..4)
 enum class SHADOW_MODE
 {
     OFF,
     NO_BIAS,
     BIAS,
-    PCF
+    PCF,
+    PCF_HARDWARE
 };
 
 /////////////////// LIGHTING struct ///////////////////////

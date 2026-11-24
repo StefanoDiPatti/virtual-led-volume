@@ -88,6 +88,8 @@ config
 #define SHADOW_FAR  30.0f
 // texture unit of the shadow map in the scene shader (unit 0 is used by the wall and the skybox)
 #define SHADOW_TEXTURE_UNIT 1
+// texture unit of the shadow map read by the hardware PCF sampler
+#define SHADOW_HARDWARE_TEXTURE_UNIT 2
 
 // limits of the light position slider in the GUI (metres): the light stays above and around the 10x10 m stage
 #define LIGHT_POSITION_MIN -15.0f

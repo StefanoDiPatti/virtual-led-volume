@@ -158,7 +158,7 @@ public:
             ImGui::SliderFloat3("Environment Light", &environmentLighting.lightPosition.x, LIGHT_POSITION_MIN, LIGHT_POSITION_MAX, "%.1f m");
 
             int shadowItem = (int) lighting.shadowMode;
-            if(ImGui::Combo("Shadows", &shadowItem, "Off\0No Bias\0Bias\0PCF 3x3\0\0"))
+            if(ImGui::Combo("Shadows", &shadowItem, "Off\0No Bias\0Bias\0PCF 3x3\0PCF Hardware\0\0"))
                 lighting.shadowMode = (SHADOW_MODE)shadowItem;
         }
 

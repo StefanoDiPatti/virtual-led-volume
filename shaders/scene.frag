@@ -16,7 +16,10 @@ in vec4 posLightSpace;
 // depth map rendered from the set light (shadow pass)
 uniform sampler2D shadowMap;
 
-// shadow technique: 0 OFF, 1 NO_BIAS, 2 BIAS, 3 PCF (same order of the SHADOW_MODE enum)
+// the same depth map read through the hardware PCF sampler: texture() returns the comparison result
+uniform sampler2DShadow shadowMapHardware;
+
+// shadow technique: 0 OFF, 1 NO_BIAS, 2 BIAS, 3 PCF, 4 PCF_HARDWARE (same order of the SHADOW_MODE enum)
 uniform int shadowMode;
 
 // ambient, diffusive and specular components
@@ -57,6 +60,11 @@ float ShadowCalculation()
     // slope-scaled bias against shadow acne: larger when the light is grazing the surface.
     // The light projection is orthographic, so depth is linear: 0.001 is ~3 cm in our 29 m depth range
     float bias = (shadowMode == 1) ? 0.0 : max(0.003 * (1.0 - dot(N, L)), 0.0003);
+
+    // PCF_HARDWARE: one fetch, the texture unit compares the reference depth with the 2x2 nearest texels
+    // and blends the results bilinearly. It returns the lit fraction, so the shadow is 1 - result
+    if(shadowMode == 4)
+        return 1.0 - texture(shadowMapHardware, vec3(projCoords.xy, projCoords.z - bias));
 
     // NO_BIAS and BIAS: a single sample of the shadow map
     if(shadowMode < 3)
