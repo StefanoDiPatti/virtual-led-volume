@@ -48,7 +48,7 @@ public:
         this->normalsLocation = glCheckUniformLocation(this->shader.Program, "normals");
 
         // lighting and material
-        this->pointLightLocation = glCheckUniformLocation(this->shader.Program, "pointLightPosition");
+        this->lightDirectionLocation = glCheckUniformLocation(this->shader.Program, "lightDirection");
         this->matDiffuseLocation = glCheckUniformLocation(this->shader.Program, "diffuseColor");
         this->matAmbientLocation = glCheckUniformLocation(this->shader.Program, "ambientColor");
         this->matSpecularLocation = glCheckUniformLocation(this->shader.Program, "specularColor");
@@ -96,8 +96,11 @@ public:
         else
             GL_CHECK(glUniform1i(this->shadowModeLocation, (int)SHADOW_MODE::OFF));
 
+        // directional light: the same direction used by the shadow map (from the light to the target)
+        glm::vec3 lightDirection = glm::normalize(config::SHADOW_TARGET - lighting.lightPosition);
+
         // we assign the value to the uniform variables
-        GL_CHECK(glUniform3fv(this->pointLightLocation, 1, glm::value_ptr(lighting.lightPosition)));
+        GL_CHECK(glUniform3fv(this->lightDirectionLocation, 1, glm::value_ptr(lightDirection)));
         GL_CHECK(glUniform3fv(this->matAmbientLocation, 1, glm::value_ptr(config::AMBIENT_COLOR)));
         GL_CHECK(glUniform3fv(this->matSpecularLocation, 1, glm::value_ptr(config::SPECULAR_COLOR)));
         GL_CHECK(glUniform1f(this->kaLocation, lighting.Ka));
@@ -132,7 +135,7 @@ private:
 
     // variables used to store uniform location inside shaders
     GLint modelLocation, viewLocation, projectionLocation, normalsLocation;
-    GLint pointLightLocation, matDiffuseLocation, matAmbientLocation, matSpecularLocation;
+    GLint lightDirectionLocation, matDiffuseLocation, matAmbientLocation, matSpecularLocation;
     GLint kdLocation, kaLocation, ksLocation, shineLocation;
     GLint lightSpaceLocation, shadowMapLocation, shadowModeLocation;
 };

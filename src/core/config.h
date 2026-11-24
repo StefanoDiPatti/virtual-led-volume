@@ -92,6 +92,8 @@ config
 // limits of the light position slider in the GUI (metres): the light stays above and around the 10x10 m stage
 #define LIGHT_POSITION_MIN -15.0f
 #define LIGHT_POSITION_MAX  15.0f
+// above this value the light direction is considered parallel to the world up (about 2.6 degrees)
+#define LIGHT_PARALLEL_UP_DOT 0.999f
 
 /////////////////// debug lines ///////////////////////
 // capacity of the line renderer (2 vertices per segment)
@@ -152,6 +154,9 @@ namespace config
     // colours of the light
     const glm::vec3 AMBIENT_COLOR(0.1f, 0.1f, 0.1f);
     const glm::vec3 SPECULAR_COLOR(1.0f, 1.0f, 1.0f);
+
+    // sun of the virtual environment: directional light from this position towards the target, independent of the set light
+    const glm::vec3 ENVIRONMENT_LIGHT_POSITION(-10.0f, 8.0f, 2.0f);
 
     // clear colours
     const glm::vec3 BACKGROUND_COLOR(0.2f, 0.3f, 0.3f);

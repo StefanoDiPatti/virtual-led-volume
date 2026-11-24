@@ -4,6 +4,7 @@ VirtualEnvironment class
   (to make parallax visible), and a cubemap skybox
 - Draw() renders the environment from the given camera: it is used for the wall FBO
   and for the direct (ground truth) view
+- own directional light, independent of the set light
 */
 
 #pragma once
@@ -49,12 +50,15 @@ public:
 
         // sphere: medium distance
         this->sphereModelMatrix = glm::translate(glm::mat4(1.0f), config::SPHERE_POSITION);
+
+        // own light of the virtual environment: its sun, fixed in the virtual world
+        this->lighting.lightPosition = config::ENVIRONMENT_LIGHT_POSITION;
     }
 
     // rendering of the virtual environment from the given camera
-    void Draw(SceneShader& shader, const glm::mat4& view, const glm::mat4& projection, const Lighting& lighting)
+    void Draw(SceneShader& shader, const glm::mat4& view, const glm::mat4& projection)
     {
-        shader.Begin(view, projection, lighting);
+        shader.Begin(view, projection, this->lighting);
 
         // we render the far pillar
         shader.DrawModel(this->cube, this->farPillarModelMatrix, config::FAR_PILLAR_COLOR);
@@ -69,10 +73,16 @@ public:
         this->skybox.Draw(view, projection);
     }
 
+    // the GUI changes the environment light through this reference
+    Lighting& GetLighting() { return this->lighting; }
+
 private:
     Model cube;
     Model sphere;
     Skybox skybox;
+
+    // own light of the virtual environment (not affected by the set light)
+    Lighting lighting;
 
     // model matrices
     glm::mat4 farPillarModelMatrix;

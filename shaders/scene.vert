@@ -17,8 +17,8 @@ uniform mat4 projection;
 // normals transformation matrix (= transpose of the inverse of the model-view matrix)
 uniform mat3 normals;
 
-// the position of the point light is passed as uniform
-uniform vec3 pointLightPosition;
+// direction of the directional light (world coordinates, from the light to the target)
+uniform vec3 lightDirection;
 
 // light space matrix (projection * view of the set light), for the shadow lookup
 uniform mat4 lightSpaceMatrix;
@@ -53,8 +53,7 @@ void main()
     vNormal = normalize(normals * normal);
 
     // light incidence direction (in view coordinate)
-    vec4 lightPos = view  * vec4(pointLightPosition, 1.0);
-    lightDir = normalize(lightPos.xyz - mvPosition.xyz);
+    lightDir = normalize(-(mat3(view) * lightDirection));
 
     // the light is not related to the camera: we start from world coordinates (model only, no view)
     posLightSpace = lightSpaceMatrix * model * hom_position;

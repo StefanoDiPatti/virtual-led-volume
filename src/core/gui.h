@@ -92,7 +92,7 @@ public:
     }
 
     // parameter panel, top left: cine camera settings, view selection, debug lines, lighting keys and frame rate
-    void DrawPanel (CineCamera& camera, Input& input, LineToggles& toggles, Lighting& lighting)
+    void DrawPanel (CineCamera& camera, Input& input, LineToggles& toggles, Lighting& lighting, Lighting& environmentLighting)
     {
         // initial position only: then the window can be dragged
         ImGui::SetNextWindowPos(ImVec2(GUI_POSITION_X, GUI_POSITION_Y), ImGuiCond_FirstUseEver);
@@ -151,10 +151,11 @@ public:
                 input.SetControlTarget(CONTROL_TARGET::CAMERA);
         }
 
-        // set light and shadow technique
+        // set light, environment light and shadows
         if(ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::SliderFloat3("Light Position", &lighting.lightPosition.x, LIGHT_POSITION_MIN, LIGHT_POSITION_MAX, "%.1f m");
+            ImGui::SliderFloat3("Environment Light", &environmentLighting.lightPosition.x, LIGHT_POSITION_MIN, LIGHT_POSITION_MAX, "%.1f m");
 
             int shadowItem = (int) lighting.shadowMode;
             if(ImGui::Combo("Shadows", &shadowItem, "Off\0No Bias\0Bias\0PCF 3x3\0\0"))

@@ -142,7 +142,7 @@ int main()
         wall.UpdateEye(cineCamera.GetPosition(), NEAR_PLANE, FAR_PLANE);
 
         wall.BeginCapture();
-        environment.Draw(sceneShader, wall.GetEyeMatrices().view, wall.GetEyeMatrices().projection, lighting);
+        environment.Draw(sceneShader, wall.GetEyeMatrices().view, wall.GetEyeMatrices().projection);
         wall.EndCapture();
 
         // ------- PASS 2: screen -------
@@ -203,7 +203,7 @@ int main()
         }
 
         // widgets of the panel: a change of view is applied in this same frame (the GUI is rendered after the views)
-        gui.DrawPanel(cineCamera, input, lineToggles, lighting);
+        gui.DrawPanel(cineCamera, input, lineToggles, lighting, environment.GetLighting());
 
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)
@@ -269,13 +269,13 @@ int main()
             case VIEW_MODE::GROUND_TRUTH:
             {
                 // ground truth: the virtual environment seen directly from the cine camera
-                environment.Draw(sceneShader, cineView, cineProjection, lighting);
+                environment.Draw(sceneShader, cineView, cineProjection);
                 break;
             }
             case VIEW_MODE::DIFFERENCE:
             {
                 // difference: ground truth first, then the wall subtracted from it (black if they match)
-                environment.Draw(sceneShader, cineView, cineProjection, lighting);
+                environment.Draw(sceneShader, cineView, cineProjection);
                 wall.DrawDifference(cineView, cineProjection);
                 break;
             }

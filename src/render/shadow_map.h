@@ -77,8 +77,13 @@ public:
     // light space matrix: from world coordinates to the clip space of the light
     void UpdateLight(const glm::vec3& lightPos, const glm::vec3& target)
     {
-        // the light looks at the target (up must not be parallel to the light direction)
-        glm::vec3 up(0.0f, 1.0f, 0.0f);
+        // the light looks at the target. If the light is almost vertical, dir and WORLD_Y are parallel:
+        // their cross product is zero and lookAt returns NaN, so we use WORLD_Z as up
+        glm::vec3 up = config::WORLD_Y;
+        glm::vec3 dir = glm::normalize(target - lightPos);
+        if(glm::abs(glm::dot(dir, config::WORLD_Y)) > LIGHT_PARALLEL_UP_DOT)
+            up = config::WORLD_Z;
+
         glm::mat4 lightView = glm::lookAt(lightPos, target, up);
 
         // orthographic projection: parallel rays, i.e. a directional light. The volume encloses the whole stage
