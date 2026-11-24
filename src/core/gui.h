@@ -29,6 +29,8 @@ Gui class
 #include <render/line_renderer.h>
 // lighting parameters and shadow technique
 #include <render/lighting.h>
+// LED wall (content shown on the wall)
+#include <scene/led_wall.h>
 
 /////////////////// Gui class ///////////////////////
 class Gui
@@ -92,7 +94,7 @@ public:
     }
 
     // parameter panel, top left: cine camera settings, view selection, debug lines, lighting keys and frame rate
-    void DrawPanel (CineCamera& camera, Input& input, LineToggles& toggles, Lighting& lighting, Lighting& environmentLighting)
+    void DrawPanel (CineCamera& camera, Input& input, LineToggles& toggles, Lighting& lighting, Lighting& environmentLighting, LedWall& wall)
     {
         // initial position only: then the window can be dragged
         ImGui::SetNextWindowPos(ImVec2(GUI_POSITION_X, GUI_POSITION_Y), ImGuiCond_FirstUseEver);
@@ -106,10 +108,10 @@ public:
                 camera.SetFocalLength(f);
 
             int item = (int) camera.GetSensorPreset();
-            
+
             if(ImGui::Combo("Sensor", &item, "Full Frame 36x24\0Super 35 24.89x18.66\0\0"))
                 camera.SetSensorPreset((SENSOR_PRESET)item);
-            
+
             // read-only values
             ImGui::Text("Vertical FOV %.1f deg", glm::degrees(camera.GetVerticalFov()));
             ImGui::Text("Position X %.1f", camera.GetPosition().x);
@@ -140,7 +142,7 @@ public:
             ImGui::SameLine();
             if(ImGui::RadioButton("Difference", mode == VIEW_MODE::DIFFERENCE))
                 input.SetViewMode(VIEW_MODE::DIFFERENCE);
-            
+
             ImGui::Text("Controls:");
             ImGui::SameLine();
 
@@ -149,6 +151,11 @@ public:
             ImGui::SameLine();
             if(ImGui::RadioButton("Camera", target == CONTROL_TARGET::CAMERA))
                 input.SetControlTarget(CONTROL_TARGET::CAMERA);
+
+            // content of the wall: inner frustum (cine camera) or outer frustum (fixed eye)
+            int wallItem = (int)wall.GetContent();
+            if(ImGui::Combo("Wall Content", &wallItem, "Inner\0Outer\0\0"))
+                wall.SetContent((WALL_CONTENT)wallItem);
         }
 
         // set light, environment light and shadows
@@ -194,7 +201,7 @@ public:
                     ImGui::TableSetColumnIndex(1);
                     ImGui::TextUnformatted(KEYS[i][1]);
                 }
-                
+
                 ImGui::EndTable();
             }
         }

@@ -91,7 +91,7 @@ int main()
 
     // LED wall 6x3 m standing on the floor at z = -3 (pa lower-left, pb lower-right, pc upper-left)
     // the off-screen target has the same 2:1 aspect ratio of the wall
-    LedWall wall(config::WALL_LOWER_LEFT, config::WALL_LOWER_RIGHT, config::WALL_UPPER_LEFT, WALL_RT_WIDTH, WALL_RT_HEIGHT);
+    LedWall wall(config::WALL_LOWER_LEFT, config::WALL_LOWER_RIGHT, config::WALL_UPPER_LEFT, WALL_RT_WIDTH, WALL_RT_HEIGHT, WALL_OUTER_RT_WIDTH, WALL_OUTER_RT_HEIGHT);
 
     // groups of debug lines to draw (changed by the GUI panel)
     LineToggles lineToggles;
@@ -141,8 +141,13 @@ int main()
         // near plane small and fixed: all the virtual objects are behind the wall
         wall.UpdateEye(cineCamera.GetPosition(), NEAR_PLANE, FAR_PLANE);
 
-        wall.BeginCapture();
+        wall.BeginCapture(WALL_CONTENT::INNER);
         environment.Draw(sceneShader, wall.GetEyeMatrices().view, wall.GetEyeMatrices().projection);
+        wall.EndCapture();
+
+        // ------- PASS 1b: virtual environment rendered into the outer frustum target, from the fixed eye -------
+        wall.BeginCapture(WALL_CONTENT::OUTER);
+        environment.Draw(sceneShader, wall.GetOuterEyeMatrices().view, wall.GetOuterEyeMatrices().projection);
         wall.EndCapture();
 
         // ------- PASS 2: screen -------
@@ -203,7 +208,7 @@ int main()
         }
 
         // widgets of the panel: a change of view is applied in this same frame (the GUI is rendered after the views)
-        gui.DrawPanel(cineCamera, input, lineToggles, lighting, environment.GetLighting());
+        gui.DrawPanel(cineCamera, input, lineToggles, lighting, environment.GetLighting(), wall);
 
         VIEW_MODE mode = input.GetViewMode();
         switch(mode)

@@ -6,6 +6,7 @@ LedWall class
 - off-screen render target (FBO) where the virtual environment is rendered,
   then applied as texture on the quad (unlit/emissive)
 - off-axis projection of the wall from the camera position (the last valid one is kept)
+- outer frustum: second, low resolution render target, rendered from a fixed eye at the centre of the stage
 */
 
 #pragma once
@@ -29,18 +30,28 @@ LedWall class
 // named constants of the application
 #include <core/config.h>
 
+// content shown on the wall: the inner frustum (from the cine camera) or the outer frustum (from the fixed eye)
+enum class WALL_CONTENT
+{
+    INNER,
+    OUTER
+};
+
 /////////////////// LED WALL class ///////////////////////
 class LedWall
 {
 public:
 
-    // constructor: corners of the wall, resolution of the render target
-    LedWall(const glm::vec3& pa, const glm::vec3& pb, const glm::vec3& pc, int targetWidth, int targetHeight)
+    // constructor: corners of the wall, resolutions of the inner and outer render targets
+    LedWall(const glm::vec3& pa, const glm::vec3& pb, const glm::vec3& pc, int targetWidth, int targetHeight, int outerWidth, int outerHeight)
         : pa(pa), pb(pb), pc(pc), pd(pb + pc - pa),
-          target(targetWidth, targetHeight),
+          target(targetWidth, targetHeight), outerTarget(outerWidth, outerHeight),
           shader(WALL_VERT_PATH, WALL_FRAG_PATH)
     {
         this->SetupQuad();
+
+        // the outer eye does not move: its off-axis projection is computed once
+        this->outerEyeMatrices = OffAxisProjection(this->pa, this->pb, this->pc, config::OUTER_EYE_POSITION, NEAR_PLANE, FAR_PLANE);
     }
 
     // the instance owns OpenGL resources: copies are not allowed
@@ -55,10 +66,15 @@ public:
         GL_CHECK(glDeleteBuffers(1, &this->EBO));
     }
 
-    // the following rendering calls are directed to the wall render target
-    void BeginCapture()
+    // the following rendering calls are directed to the render target of the given frustum (inner or outer)
+    void BeginCapture(WALL_CONTENT content)
     {
-        this->target.Bind();
+        // we bind the render target of the requested frustum
+        if(content == WALL_CONTENT::OUTER)
+            this->outerTarget.Bind();
+        else
+            this->target.Bind();
+
         GL_CHECK(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
     }
 
@@ -68,11 +84,14 @@ public:
         GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     }
 
-    // rendering of the wall quad, textured with the content of the render target
+    // rendering of the wall quad, textured with the inner or the outer render target
     void Draw(const glm::mat4& view, const glm::mat4& projection)
     {
+        // texture shown on the wall, chosen in the GUI
+        GLuint texture = (this->content == WALL_CONTENT::OUTER) ? this->outerTarget.GetColorTexture() : this->target.GetColorTexture();
+
         // the vertices are already in world coordinates
-        this->shader.Begin(glm::mat4(1.0f), view, projection, this->target.GetColorTexture());
+        this->shader.Begin(glm::mat4(1.0f), view, projection, texture);
 
         GL_CHECK(glBindVertexArray(this->VAO));
         GL_CHECK(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
@@ -112,6 +131,13 @@ public:
     // off-axis view and projection of the wall seen from the eye position
     OffAxisMatrices GetEyeMatrices() const { return this->eyeMatrices; }
 
+    // off-axis view and projection of the wall seen from the fixed outer eye
+    OffAxisMatrices GetOuterEyeMatrices() const { return this->outerEyeMatrices; }
+
+    // content shown on the wall
+    WALL_CONTENT GetContent() const        { return this->content; }
+    void SetContent(WALL_CONTENT content)  { this->content = content; }
+
     // corners of the wall in world coordinates
     const glm::vec3& GetPa() const { return this->pa; }
     const glm::vec3& GetPb() const { return this->pb; }
@@ -122,11 +148,18 @@ private:
     // corners of the wall
     glm::vec3 pa, pb, pc, pd;
 
-    // last valid off-axis view and projection
+    // last valid off-axis view and projection (inner frustum, from the cine camera)
     OffAxisMatrices eyeMatrices;
+    // off-axis view and projection from the fixed outer eye
+    OffAxisMatrices outerEyeMatrices;
 
-    // off-screen target for the virtual environment
+    // content shown on the wall
+    WALL_CONTENT content = WALL_CONTENT::INNER;
+
+    // off-screen target for the virtual environment (inner frustum)
     RenderTarget target;
+    // low resolution target for the outer frustum
+    RenderTarget outerTarget;
     WallShader shader;
 
     // buffer objects\arrays of the quad

@@ -78,6 +78,11 @@ config
 #define WALL_RT_WIDTH  2048
 #define WALL_RT_HEIGHT 1024
 
+// resolution of the outer frustum render target: 1/4 of the inner one per side (1/16 of the pixels),
+// the camera does not film it directly
+#define WALL_OUTER_RT_WIDTH  512
+#define WALL_OUTER_RT_HEIGHT 256
+
 /////////////////// shadows ///////////////////////
 // resolution of the (square) shadow map (pixels)
 #define SHADOW_MAP_SIZE 2048
@@ -128,6 +133,9 @@ namespace config
     const glm::vec3 CINE_START_POSITION(0.0f, 1.5f, 3.0f);
     // point the active camera looks at when re-centred (right mouse button)
     const glm::vec3 SUBJECT_TARGET(0.0f, 0.5f, 0.0f);
+
+    // fixed eye of the outer frustum: centre of the stage, at eye height (metres)
+    const glm::vec3 OUTER_EYE_POSITION(0.0f, 1.7f, 0.0f);
 
     // point the set light looks at (centre of the stage)
     const glm::vec3 SHADOW_TARGET(0.0f, 0.0f, 0.0f);
