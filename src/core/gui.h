@@ -7,29 +7,17 @@ Gui class
 
 #pragma once
 
-
 #include <glad/glad.h>
-// GLFW library to create window and to manage I/O
 #include <glfw/glfw3.h>
-
-// Dear ImGui and its GLFW / OpenGL 3 backends
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-
-// named constants of the application
 #include <core/config.h>
-
 #include <iostream>
-
 #include <scene/cine_camera.h>
-
 #include <core/input.h>
-
 #include <render/line_renderer.h>
-// lighting parameters and shadow technique
 #include <render/lighting.h>
-// LED wall (content shown on the wall)
 #include <scene/led_wall.h>
 
 /////////////////// Gui class ///////////////////////
@@ -54,7 +42,6 @@ public:
         ImGui_ImplOpenGL3_Init(GLSL_VERSION);
     }
 
-    // the instance owns OpenGL resources (font texture, shaders, buffers of ImGui): copies are not allowed
     Gui(const Gui& copy) = delete;
     Gui& operator=(const Gui&) = delete;
 
@@ -86,7 +73,6 @@ public:
     {
         ImGuiIO& io = ImGui::GetIO();
 
-        // if enabled, clear the bit. Otherwise set it.
         if(enabled)
             io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
         else
@@ -112,7 +98,6 @@ public:
             if(ImGui::Combo("Sensor", &item, "Full Frame 36x24\0Super 35 24.89x18.66\0\0"))
                 camera.SetSensorPreset((SENSOR_PRESET)item);
 
-            // read-only values
             ImGui::Text("Vertical FOV %.1f deg", glm::degrees(camera.GetVerticalFov()));
             ImGui::Text("Position X %.1f", camera.GetPosition().x);
             ImGui::Text("Position Y %.1f", camera.GetPosition().y);
@@ -121,7 +106,6 @@ public:
             ImGui::Text("Tilt %.1f", camera.GetTilt());
         }
 
-        // current state of the input, shown by the radio buttons
         CONTROL_TARGET target = input.GetControlTarget();
         VIEW_MODE mode = input.GetViewMode();
 
@@ -152,17 +136,16 @@ public:
             if(ImGui::RadioButton("Camera", target == CONTROL_TARGET::CAMERA))
                 input.SetControlTarget(CONTROL_TARGET::CAMERA);
 
-            // content of the wall: inner frustum (cine camera) or outer frustum (fixed eye)
             int wallItem = (int)wall.GetContent();
             if(ImGui::Combo("Wall Content", &wallItem, "Inner\0Outer\0Inner + Outer\0\0"))
                 wall.SetContent((WALL_CONTENT)wallItem);
         }
 
-        // set light, environment light and shadows
         if(ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen))
         {
             ImGui::SliderFloat3("Light Position", &lighting.lightPosition.x, LIGHT_POSITION_MIN, LIGHT_POSITION_MAX, "%.1f m");
             ImGui::SliderFloat3("Environment Light", &environmentLighting.lightPosition.x, LIGHT_POSITION_MIN, LIGHT_POSITION_MAX, "%.1f m");
+            ImGui::SliderFloat("Wall Light", &lighting.Kw, 0.0f, 2.0f, "%.2f");
 
             int shadowItem = (int) lighting.shadowMode;
             if(ImGui::Combo("Shadows", &shadowItem, "Off\0No Bias\0Bias\0PCF 3x3\0PCF Hardware\0\0"))
@@ -179,7 +162,6 @@ public:
             ImGui::Checkbox("Off-axis lines", &toggles.offAxisLines);
         }
 
-        // table of the commands (closed at start)
         if(ImGui::CollapsingHeader("Keys"))
         {
             static const char* KEYS[][2] = { {"G", "UI mode on / off"},

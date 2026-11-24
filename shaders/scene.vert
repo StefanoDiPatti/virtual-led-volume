@@ -19,12 +19,14 @@ uniform mat3 normals;
 
 // direction of the directional light (world coordinates, from the light to the target)
 uniform vec3 lightDirection;
+uniform vec3 wallLightDirection;
 
 // light space matrix (projection * view of the set light), for the shadow lookup
 uniform mat4 lightSpaceMatrix;
 
 // light incidence direction (in view coordinates)
 out vec3 lightDir;
+out vec3 wallLightDir;
 // the transformed normal (in view coordinate) is set as an output variable, to be "passed" to the fragment shader
 // this means that the normal values in each vertex will be interpolated on each fragment created during rasterization between two vertices
 out vec3 vNormal;
@@ -54,6 +56,7 @@ void main()
 
     // light incidence direction (in view coordinate)
     lightDir = normalize(-(mat3(view) * lightDirection));
+    wallLightDir = normalize(-(mat3(view) * wallLightDirection));
 
     // the light is not related to the camera: we start from world coordinates (model only, no view)
     posLightSpace = lightSpaceMatrix * model * hom_position;

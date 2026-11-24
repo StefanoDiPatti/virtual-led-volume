@@ -37,6 +37,11 @@ struct Lighting
     // shininess coefficient for Blinn-Phong shaders
     GLfloat shininess = 25.0f;
 
+    // light emitted by the LED wall (updated every frame; black for the virtual environment) and its weight
+    glm::vec3 wallLightColor = glm::vec3(0.0f);
+    glm::vec3 wallLightDirection = glm::vec3(0.0f, 0.0f, 1.0f);
+    GLfloat Kw = 0.5f;
+
     // active shadow technique (it can change at runtime)
     SHADOW_MODE shadowMode = SHADOW_MODE::PCF;
 };

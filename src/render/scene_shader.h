@@ -41,6 +41,10 @@ public:
         this->ksLocation = glCheckUniformLocation(this->shader.Program, "Ks");
         this->shineLocation = glCheckUniformLocation(this->shader.Program, "shininess");
 
+        this->wallLightColorLocation = glCheckUniformLocation(this->shader.Program, "wallLightColor");
+        this->wallLightDirectionLocation = glCheckUniformLocation(this->shader.Program, "wallLightDirection");
+        this->kwLocation = glCheckUniformLocation(this->shader.Program, "Kw");
+
         this->lightSpaceLocation = glCheckUniformLocation(this->shader.Program, "lightSpaceMatrix");
         this->shadowMapLocation = glCheckUniformLocation(this->shader.Program, "shadowMap");
         this->shadowModeLocation = glCheckUniformLocation(this->shader.Program, "shadowMode");
@@ -100,6 +104,10 @@ public:
         GL_CHECK(glUniform1f(this->ksLocation, lighting.Ks));
         GL_CHECK(glUniform1f(this->shineLocation, lighting.shininess));
 
+        GL_CHECK(glUniform3fv(this->wallLightColorLocation, 1, glm::value_ptr(lighting.wallLightColor)));
+        GL_CHECK(glUniform3fv(this->wallLightDirectionLocation, 1, glm::value_ptr(lighting.wallLightDirection)));
+        GL_CHECK(glUniform1f(this->kwLocation, lighting.Kw));
+
         GL_CHECK(glUniformMatrix4fv(this->projectionLocation, 1, GL_FALSE, glm::value_ptr(projection)));
         GL_CHECK(glUniformMatrix4fv(this->viewLocation, 1, GL_FALSE, glm::value_ptr(view)));
     }
@@ -125,5 +133,6 @@ private:
     GLint modelLocation, viewLocation, projectionLocation, normalsLocation;
     GLint lightDirectionLocation, matDiffuseLocation, matAmbientLocation, matSpecularLocation;
     GLint kdLocation, kaLocation, ksLocation, shineLocation;
+    GLint wallLightColorLocation, wallLightDirectionLocation, kwLocation;
     GLint lightSpaceLocation, shadowMapLocation, shadowModeLocation, shadowMapHardwareLocation;
 };

@@ -5,6 +5,7 @@ out vec4 colorFrag;
 
 // light incidence direction (calculated in vertex shader, interpolated by rasterization)
 in vec3 lightDir;
+in vec3 wallLightDir;
 // the transformed normal has been calculated per-vertex in the vertex shader
 in vec3 vNormal;
 // vector from fragment to camera (in view coordinate)
@@ -32,6 +33,10 @@ uniform vec3 specularColor;
 uniform float Ka;
 uniform float Kd;
 uniform float Ks;
+
+// light emitted by the LED wall (average colour of the outer frustum) and its weight
+uniform vec3 wallLightColor;
+uniform float Kw;
 
 // shininess coefficients
 uniform float shininess;
@@ -127,6 +132,10 @@ vec3 BlinnPhong()
       color += vec3((Kd * lambertian * diffuseColor +
                       Ks * specular * specularColor) * (1.0 - shadow));
     }
+
+    // light from the LED wall: Lambert only, not shadowed (the wall is a large area light)
+    color += Kw * max(dot(N, normalize(wallLightDir)), 0.0) * wallLightColor * diffuseColor;
+
     return color;
 }
 

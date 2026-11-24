@@ -10,14 +10,9 @@ the Window instance must be created before, and destroyed after, every object ow
 
 #pragma once
 
-// Std. Includes
 #include <iostream>
 #include <cstdlib>
-
-// Loader for OpenGL extensions (it must be included before GLFW)
 #include <glad/glad.h>
-
-// GLFW library to create window and to manage I/O
 #include <glfw/glfw3.h>
 
 /////////////////// WINDOW class ///////////////////////
@@ -28,7 +23,6 @@ public:
     // constructor: GLFW initialization, window and OpenGL context creation
     Window(int width, int height, const char* title)
     {
-        // initialization of OpenGL context using GLFW
         if(glfwInit() == GLFW_FALSE)
         {
             std::cout << "Failed to initialize GLFW" << std::endl;
@@ -40,10 +34,8 @@ public:
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-        // we set if the window is resizable
         glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-        // creation of the application's window
         this->window = glfwCreateWindow(width, height, title, nullptr, nullptr);
         if(!this->window)
         {
@@ -82,7 +74,6 @@ public:
     // true when the user asked to close the application
     bool ShouldClose() const { return glfwWindowShouldClose(this->window); }
 
-    // check if an I/O event is happening
     void PollEvents() const { glfwPollEvents(); }
 
     // double buffering: swapping back and front buffers

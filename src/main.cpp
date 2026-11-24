@@ -150,6 +150,10 @@ int main()
         environment.Draw(sceneShader, wall.GetOuterEyeMatrices().view, wall.GetOuterEyeMatrices().projection);
         wall.EndCapture();
 
+        // the wall lights the stage with the average colour of the outer frustum
+        lighting.wallLightColor = wall.GetEmittedColor();
+        lighting.wallLightDirection = wall.GetNormal();
+
         // ------- PASS 2: screen -------
         window.GetFramebufferSize(width, height);
 

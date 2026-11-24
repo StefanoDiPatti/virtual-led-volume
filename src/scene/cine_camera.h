@@ -11,12 +11,8 @@ CineCamera class
 #pragma once
 
 #include <array>
-
-// Loader for GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-// named constants of the application
 #include <core/config.h>
 
 // sensor formats of the camera
@@ -55,10 +51,8 @@ public:
     {
         this->position = position;
 
-        // sensor size (mm) from the chosen format
         SetSensorPreset(sensorPreset);
 
-        // initialization of the camera reference system
         UpdateVectors();
     }
 
@@ -90,7 +84,6 @@ public:
             case CINE_MOVEMENT::PEDESTAL_DOWN:
                 position.y -= moveSpeed * deltaTime;
                 break;
-            // rotations: the reference system must be updated
             case CINE_MOVEMENT::PAN_RIGHT:
                 pan += rotationSpeed * deltaTime;
                 UpdateVectors();
@@ -126,7 +119,6 @@ public:
         pan += xoffset * mouseSensitivity;
         tilt += yoffset * mouseSensitivity;
 
-        // the tilt is clamped inside UpdateVectors
         UpdateVectors();
     }
 
@@ -157,10 +149,8 @@ public:
         UpdateVectors();
     }
 
-    // it returns the current view matrix
     glm::mat4 GetViewMatrix() const { return glm::lookAt(this->position, this->position + this->front, this->up); }
 
-    // position and optics of the cine camera
     glm::vec3 GetPosition() const  { return this->position; }
     float GetFocalLength() const   { return this->focalLength; }
     float GetSensorWidth() const   { return this->sensorWidth; }
@@ -168,10 +158,8 @@ public:
 
     // vertical angle of view (radians): FOV = 2 * atan(h / 2f), sensor height and focal length in mm
     float GetVerticalFov() const   { return 2 * glm::atan(sensorHeight / (2 * focalLength)); }
-    // aspect ratio of the sensor
     float GetAspect() const        { return sensorWidth / sensorHeight; }
 
-    // projection matrix of the cine camera, from its optics
     glm::mat4 GetProjectionMatrix(float nearPlane, float farPlane) const { return glm::perspective(this->GetVerticalFov(), this->GetAspect(), nearPlane, farPlane); }
 
     // corners of the frustum in world coordinates (0-3 near, 4-7 far, same counter-clockwise order):
@@ -193,15 +181,12 @@ public:
         return corners;
     }
 
-    // orientation of the cine camera (unit vectors, roll included)
     glm::vec3 GetFront() const { return this->front; }
     glm::vec3 GetRight() const { return this->right; }
     glm::vec3 GetUp()    const { return this->up; }
-    // orientation (degrees)
     float GetPan()       const { return this->pan; }
     float GetTilt()      const { return this->tilt; }
 
-    // sensor format
     SENSOR_PRESET GetSensorPreset() const { return this->sensorPreset; }
 
     // zoom from the GUI, kept inside the range of the lens
@@ -215,7 +200,6 @@ public:
     {
         sensorPreset = preset;
 
-        // we set the sensor size (mm) from the chosen format
         switch(sensorPreset)
         {
             case SENSOR_PRESET::FULL_FRAME:
@@ -230,11 +214,9 @@ public:
     }
 
 private:
-    // position and orientation (degrees)
     glm::vec3 position;
     float pan = 0.0f, tilt = 0.0f, roll = 0.0f;
 
-    // optics (mm)
     float focalLength = 35.0f;
     float sensorWidth, sensorHeight;
     SENSOR_PRESET sensorPreset;

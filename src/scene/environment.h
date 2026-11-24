@@ -9,25 +9,14 @@ VirtualEnvironment class
 
 #pragma once
 
-// Std. Includes
 #include <string>
-
-// Loader for OpenGL extensions
 #include <glad/glad.h>
-
-// Loader for GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-// class to load models
 #include <utils/model.h>
-
-// scene shader, lighting parameters and skybox
 #include <render/scene_shader.h>
 #include <render/lighting.h>
 #include <render/skybox.h>
-
-// named constants of the application
 #include <core/config.h>
 
 /////////////////// VIRTUAL ENVIRONMENT class ///////////////////////
@@ -55,18 +44,14 @@ public:
         this->lighting.lightPosition = config::ENVIRONMENT_LIGHT_POSITION;
     }
 
-    // rendering of the virtual environment from the given camera
     void Draw(SceneShader& shader, const glm::mat4& view, const glm::mat4& projection)
     {
         shader.Begin(view, projection, this->lighting);
 
-        // we render the far pillar
         shader.DrawModel(this->cube, this->farPillarModelMatrix, config::FAR_PILLAR_COLOR);
 
-        // we render the near pillar
         shader.DrawModel(this->cube, this->nearPillarModelMatrix, config::NEAR_PILLAR_COLOR);
 
-        // we render the sphere
         shader.DrawModel(this->sphere, this->sphereModelMatrix, config::SPHERE_COLOR);
 
         // the skybox is rendered last
@@ -81,10 +66,8 @@ private:
     Model sphere;
     Skybox skybox;
 
-    // own light of the virtual environment (not affected by the set light)
     Lighting lighting;
 
-    // model matrices
     glm::mat4 farPillarModelMatrix;
     glm::mat4 nearPillarModelMatrix;
     glm::mat4 sphereModelMatrix;

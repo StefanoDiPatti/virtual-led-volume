@@ -37,6 +37,13 @@ public:
         this->contentLocation = glCheckUniformLocation(this->shader.Program, "content");
         this->marginLocation = glCheckUniformLocation(this->shader.Program, "innerMargin");
         this->blendLocation = glCheckUniformLocation(this->shader.Program, "innerBlend");
+
+        // samplers, overscan and soft edge never change: we set them once
+        this->shader.Use();
+        GL_CHECK(glUniform1i(this->innerTextureLocation, WALL_INNER_TEXTURE_UNIT));
+        GL_CHECK(glUniform1i(this->outerTextureLocation, WALL_OUTER_TEXTURE_UNIT));
+        GL_CHECK(glUniform1f(this->marginLocation, INNER_FRUSTUM_MARGIN));
+        GL_CHECK(glUniform1f(this->blendLocation, INNER_FRUSTUM_BLEND));
     }
 
     WallShader(const WallShader&) = delete;
@@ -51,12 +58,6 @@ public:
     void Begin(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection, GLuint innerTexture, GLuint outerTexture, const glm::mat4& cameraViewProjection, WALL_CONTENT content)
     {
         this->shader.Use();
-
-        // samplers, overscan and soft edge never change
-        GL_CHECK(glUniform1i(this->innerTextureLocation, WALL_INNER_TEXTURE_UNIT));
-        GL_CHECK(glUniform1i(this->outerTextureLocation, WALL_OUTER_TEXTURE_UNIT));
-        GL_CHECK(glUniform1f(this->marginLocation, INNER_FRUSTUM_MARGIN));
-        GL_CHECK(glUniform1f(this->blendLocation, INNER_FRUSTUM_BLEND));
 
         // inner and outer frustum textures on their texture units
         GL_CHECK(glActiveTexture(GL_TEXTURE0 + WALL_INNER_TEXTURE_UNIT));

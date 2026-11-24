@@ -13,24 +13,12 @@ inside the window (glfwSetWindowUserPointer), and the static callbacks retrieve 
 
 #pragma once
 
-// std::pair for the key bindings table of the cine camera
 #include <utility>
-// console output of the current state
 #include <iostream>
-
-// Loader for OpenGL extensions (it must be included before GLFW)
 #include <glad/glad.h>
-
-// GLFW library to create window and to manage I/O
 #include <glfw/glfw3.h>
-
-// class to manage the FPS camera
 #include <utils/camera.h>
-
-// class to manage the cine camera
 #include <scene/cine_camera.h>
-
-// named constants of the application
 #include <core/config.h>
 
 // target of the WASD + mouse controls (Tab toggles it)
@@ -61,13 +49,11 @@ public:
         // we store the pointer to this instance inside the window, to retrieve it in the static callbacks
         glfwSetWindowUserPointer(window, this);
 
-        // relate window and the callbacks
         glfwSetKeyCallback(window, KeyCallback);
         glfwSetCursorPosCallback(window, MouseCallback);
         glfwSetScrollCallback(window, ScrollCallback);
         glfwSetMouseButtonCallback(window, MouseButtonCallback);
 
-        // we disable the mouse cursor
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     }
 
@@ -84,9 +70,7 @@ public:
             MoveCamera(deltaTime);
     }
 
-    // current view mode
     VIEW_MODE GetViewMode() const { return this->viewMode; }
-    // camera that receives WASD + mouse
     CONTROL_TARGET GetControlTarget() const { return this->controlTarget; }
 
     // view mode and control target set by the GUI
@@ -112,15 +96,12 @@ private:
     // cine camera: the tracked camera filming the wall
     CineCamera& camera;
 
-    // we keep trace of the pressed keys
     bool keys[MAX_KEYS] = {};
 
     // we need to store the previous mouse position to calculate the offset with the current frame
     GLfloat lastX = 0.0f, lastY = 0.0f;
-    // when rendering the first frame, we do not have a "previous state" for the mouse, so we need to manage this situation
     bool firstMouse = true;
 
-    // current view mode
     VIEW_MODE viewMode = VIEW_MODE::SPLIT;
 
     // UI mode: free cursor, the mouse goes to the GUI and not to the cameras
@@ -132,10 +113,6 @@ private:
     // WASD moves the observer (the code is in utils/camera.h)
     void MoveObserver(GLfloat deltaTime)
     {
-        // if a single WASD key is pressed, then we will apply the full value of velocity v in the corresponding direction.
-        // However, if two keys are pressed together in order to move diagonally (W+D, W+A, S+D, S+A),
-        // then the camera will apply a compensation factor to the velocities applied in the single directions,
-        // in order to have the full v applied in the diagonal direction
         // the XOR on A and D is to avoid the application of a wrong attenuation in the case W+A+D or S+A+D are pressed together.
         GLboolean diagonal_movement = (keys[GLFW_KEY_W] ^ keys[GLFW_KEY_S]) && (keys[GLFW_KEY_A] ^ keys[GLFW_KEY_D]);
         observer.SetMovementCompensation(diagonal_movement);
@@ -190,7 +167,6 @@ private:
     // keyboard events
     void OnKey(GLFWwindow* window, int key, int action)
     {
-        // if ESC is pressed, close the application
         if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
             glfwSetWindowShouldClose(window, GL_TRUE);
 
@@ -242,10 +218,6 @@ private:
             PrintState();
         }
 
-        // we keep trace of the pressed keys
-        // with this method, we can manage 2 keys pressed at the same time:
-        // many I/O managers often consider only 1 key pressed at the time (the first pressed, until it is released)
-        // using a boolean array, we can then check and manage all the keys pressed at the same time
         if(key < 0 || key >= MAX_KEYS)
             return;
 
@@ -262,9 +234,6 @@ private:
         if(uiMode)
             return;
 
-        // we move the camera view following the mouse cursor
-        // we calculate the offset of the mouse cursor from the position in the last frame
-        // when rendering the first frame, we do not have a "previous state" for the mouse, so we set the previous state equal to the initial values (thus, the offset will be = 0)
         if(firstMouse)
         {
             lastX = xpos;
@@ -272,11 +241,9 @@ private:
             firstMouse = false;
         }
 
-        // offset of mouse cursor position
         GLfloat xoffset = xpos - lastX;
         GLfloat yoffset = lastY - ypos;
 
-        // the new position will be the previous one for the next frame
         lastX = xpos;
         lastY = ypos;
 

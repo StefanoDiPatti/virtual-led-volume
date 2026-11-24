@@ -11,23 +11,12 @@ LedWall class
 
 #pragma once
 
-// Loader for OpenGL extensions
 #include <glad/glad.h>
-
-// Loader for GLM
 #include <glm/glm.hpp>
-
-// class to manage OpenGL failures
 #include <render/gl_check.h>
-
-// render-to-texture and wall shader
 #include <render/framebuffer.h>
 #include <render/wall_shader.h>
-
-// off-axis projection through the wall corners
 #include <render/offaxis.h>
-
-// named constants of the application
 #include <core/config.h>
 
 /////////////////// LED WALL class ///////////////////////
@@ -47,11 +36,9 @@ public:
         this->outerEyeMatrices = OffAxisProjection(this->pa, this->pb, this->pc, config::OUTER_EYE_POSITION, NEAR_PLANE, FAR_PLANE);
     }
 
-    // the instance owns OpenGL resources: copies are not allowed
     LedWall(const LedWall&) = delete;
     LedWall& operator=(const LedWall&) = delete;
 
-    // destructor: we delete the buffers of the quad
     ~LedWall()
     {
         GL_CHECK(glDeleteVertexArrays(1, &this->VAO));
@@ -62,7 +49,6 @@ public:
     // the following rendering calls are directed to the render target of the given frustum (inner or outer)
     void BeginCapture(WALL_CONTENT content)
     {
-        // we bind the render target of the requested frustum
         if(content == WALL_CONTENT::OUTER)
             this->outerTarget.Bind();
         else
@@ -92,7 +78,6 @@ public:
     // where the off-axis projection is correct, the result is black
     void DrawDifference(const glm::mat4& view, const glm::mat4& projection)
     {
-        // we activate the blending: the fragment colour is combined with the colour already in the framebuffer
         GL_CHECK(glEnable(GL_BLEND));
         // full colours, no alpha weights
         GL_CHECK(glBlendFunc(GL_ONE, GL_ONE));
@@ -118,26 +103,24 @@ public:
             eyeMatrices = updatedEyeMatrices;
     }
 
-    // off-axis view and projection of the wall seen from the eye position
     OffAxisMatrices GetEyeMatrices() const { return this->eyeMatrices; }
 
-    // off-axis view and projection of the wall seen from the fixed outer eye
     OffAxisMatrices GetOuterEyeMatrices() const { return this->outerEyeMatrices; }
 
-    // content shown on the wall
+    // light emitted by the wall: average colour of the outer frustum, travelling along the wall normal
+    glm::vec3 GetEmittedColor() { return this->outerTarget.GetAverageColor(); }
+    glm::vec3 GetNormal() const { return glm::normalize(glm::cross(this->pb - this->pa, this->pc - this->pa)); }
+
     WALL_CONTENT GetContent() const        { return this->content; }
     void SetContent(WALL_CONTENT content)  { this->content = content; }
-    // the cine camera of the current frame
     void SetCameraViewProjection(const glm::mat4& viewProjection) { this->cameraViewProjection = viewProjection; }
 
-    // corners of the wall in world coordinates
     const glm::vec3& GetPa() const { return this->pa; }
     const glm::vec3& GetPb() const { return this->pb; }
     const glm::vec3& GetPc() const { return this->pc; }
     const glm::vec3& GetPd() const { return this->pd; }
 
 private:
-    // corners of the wall
     glm::vec3 pa, pb, pc, pd;
 
     // last valid off-axis view and projection (inner frustum, from the cine camera)
@@ -147,7 +130,6 @@ private:
     // projection * view of the cine camera: it decides which part of the wall is in the inner frustum
     glm::mat4 cameraViewProjection = glm::mat4(1.0f);
 
-    // content shown on the wall
     WALL_CONTENT content = WALL_CONTENT::COMPOSITE;
 
     // off-screen target for the virtual environment (inner frustum)
@@ -156,7 +138,6 @@ private:
     RenderTarget outerTarget;
     WallShader shader;
 
-    // buffer objects\arrays of the quad
     GLuint VAO = 0, VBO = 0, EBO = 0;
 
     // creation of the quad: interleaved positions (location 0) and UVs (location 2)
@@ -179,12 +160,9 @@ private:
         GL_CHECK(glGenBuffers(1, &this->VBO));
         GL_CHECK(glGenBuffers(1, &this->EBO));
 
-        // VAO is made "active"
         GL_CHECK(glBindVertexArray(this->VAO));
-        // we copy data in the VBO - we must set the data dimension, and the pointer to the structure containing the data
         GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, this->VBO));
         GL_CHECK(glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW));
-        // we copy data in the EBO - we must set the data dimension, and the pointer to the structure containing the data
         GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->EBO));
         GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW));
 

@@ -2,6 +2,9 @@
 
 #include <glad/glad.h>
 #include "gl_check.h"
+#include <glm/glm.hpp>
+#include <algorithm>
+#include <cmath>
 
 class RenderTarget
 {
@@ -92,6 +95,22 @@ public:
     {
         Free();
         Create(width, height);
+    }
+
+    // average colour of the image: the last mipmap level (1x1) is the mean of all the texels.
+    // The read back waits for the GPU to finish the rendering into this target
+    glm::vec3 GetAverageColor()
+    {
+        glm::vec3 color(0.0f);
+        GL_CHECK(glBindTexture(GL_TEXTURE_2D, colorTexture));
+        GL_CHECK(glGenerateMipmap(GL_TEXTURE_2D));
+
+        int lastLevel = (int)std::floor(std::log2((float)std::max(width, height)));
+        
+        GL_CHECK(glGetTexImage(GL_TEXTURE_2D, lastLevel, GL_RGB, GL_FLOAT, &color.x));
+        GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
+        
+        return color;
     }
 
     GLuint GetColorTexture() const  { return colorTexture; }

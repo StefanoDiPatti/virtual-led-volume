@@ -6,23 +6,13 @@ Stage class
 
 #pragma once
 
-// Loader for OpenGL extensions
 #include <glad/glad.h>
-
-// Loader for GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-// class to load models
 #include <utils/model.h>
-
-// scene shader and lighting parameters
 #include <render/scene_shader.h>
 #include <render/lighting.h>
-// shader of the shadow pass
 #include <render/depth_shader.h>
-
-// named constants of the application
 #include <core/config.h>
 
 /////////////////// STAGE class ///////////////////////
@@ -45,10 +35,8 @@ public:
     {
         shader.Begin(view, projection, lighting, &shadowMap);
 
-        // we render the plane
         shader.DrawModel(this->plane, this->planeModelMatrix, config::PLANE_COLOR);
 
-        // we render the subject
         shader.DrawModel(this->subject, this->subjectModelMatrix, config::SUBJECT_COLOR);
     }
 
@@ -57,10 +45,8 @@ public:
     {
         depthShader.Begin(lightSpaceMatrix);
 
-        // we render the plane
         depthShader.DrawModel(this->plane, this->planeModelMatrix);
 
-        // we render the subject
         depthShader.DrawModel(this->subject, this->subjectModelMatrix);
     }
 
@@ -68,7 +54,6 @@ private:
     Model plane;
     Model subject;
 
-    // model matrices
     glm::mat4 planeModelMatrix;
     glm::mat4 subjectModelMatrix;
 };
