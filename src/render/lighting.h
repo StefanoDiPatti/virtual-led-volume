@@ -8,10 +8,7 @@ Lighting struct
 
 #pragma once
 
-// Loader for OpenGL extensions
 #include <glad/glad.h>
-
-// Loader for GLM
 #include <glm/glm.hpp>
 
 // shadow technique: same order of the shadowMode values in shaders/scene.frag (0..4)

@@ -7,10 +7,10 @@ class RenderTarget
 {
 private:
 
-    GLuint FBO = 0;                     //framebuffer ID
-    GLuint colorTexture = 0;            // image texture
+    GLuint FBO = 0;
+    GLuint colorTexture = 0;
     GLuint depthRenderbuffer = 0;       // depth buffer (for FBO depth test)
-    int width = 0, height = 0;          // resolution
+    int width = 0, height = 0;
 
     void Create(int width, int height)
     {
@@ -32,7 +32,6 @@ private:
         GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
         GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
-        // set the binding to 0 once we have finished
         GL_CHECK(glBindTexture(GL_TEXTURE_2D, 0));
 
         GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0));
@@ -65,11 +64,10 @@ private:
 
 public:
 
-    // Copy and move are disabled: otherwise two copies would own and delete the same FBO
-    RenderTarget(const RenderTarget& copy) = delete; //disallow copy
+    RenderTarget(const RenderTarget& copy) = delete;
     RenderTarget& operator=(const RenderTarget&) = delete;
 
-    RenderTarget(RenderTarget&& move) = delete; //disallow move
+    RenderTarget(RenderTarget&& move) = delete;
     RenderTarget& operator=(RenderTarget&&) = delete;
 
     RenderTarget() = default;
@@ -96,7 +94,6 @@ public:
         Create(width, height);
     }
 
-    // ---- GETTERS ----
     GLuint GetColorTexture() const  { return colorTexture; }
     int GetWidth() const            { return width; }
     int GetHeight() const           { return height; }

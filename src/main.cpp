@@ -174,6 +174,9 @@ int main()
         glm::mat4 cineView = cineCamera.GetViewMatrix();
         glm::mat4 cineProjection = cineCamera.GetProjectionMatrix(NEAR_PLANE, FAR_PLANE);
 
+        // the wall composes inner and outer frustum from the cine camera of this frame
+        wall.SetCameraViewProjection(cineProjection * cineView);
+
         // debug lines of the frame: world axes (X red, Y green, Z blue, 1 m long)
         if(lineToggles.worldAxes)
             lines.AddAxes(config::WORLD_ORIGIN, config::WORLD_X, config::WORLD_Y, config::WORLD_Z, WORLD_AXES_LENGTH);

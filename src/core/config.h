@@ -83,6 +83,14 @@ config
 #define WALL_OUTER_RT_WIDTH  512
 #define WALL_OUTER_RT_HEIGHT 256
 
+// texture units of the wall shader (unit 1 and 2 are used by the shadow map in the scene shader)
+#define WALL_INNER_TEXTURE_UNIT 0
+#define WALL_OUTER_TEXTURE_UNIT 3
+// inner frustum overscan beyond the frame edge (NDC, the edge is at 1): 0.1 = 5% of the frame width per side
+#define INNER_FRUSTUM_MARGIN 0.1f
+// width of the soft edge between inner and outer frustum (NDC)
+#define INNER_FRUSTUM_BLEND 0.1f
+
 /////////////////// shadows ///////////////////////
 // resolution of the (square) shadow map (pixels)
 #define SHADOW_MAP_SIZE 2048

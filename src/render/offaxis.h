@@ -8,11 +8,8 @@ Off-axis projection
 
 #pragma once
 
-// Loader for GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
-// named constants of the application
 #include <core/config.h>
 
 /////////////////// OFF-AXIS MATRICES struct ///////////////////////

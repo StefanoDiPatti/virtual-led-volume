@@ -7,21 +7,12 @@ LineRenderer class
 
 #pragma once
 
-// Loader for GLM
 #include <glm/glm.hpp>
-
 #include <vector>
-// array of corners for AddBox
 #include <array>
-// offsetof, used for the vertex attribute layout
 #include <cstddef>
-
-// shader of the lines
 #include <render/line_shader.h>
-
-// named constants of the application
 #include <core/config.h>
-// class to manage OpenGL failures
 #include <render/gl_check.h>
 
 // groups of debug lines drawn in the observer views (switched on and off from the GUI)
@@ -47,24 +38,20 @@ struct LineVertex
 class LineRenderer
 {
 public:
-    // constructor: creation of the shader and of the VBO, with room for maxVertices vertices
     LineRenderer(int maxVertices) : maxVertices(maxVertices), shader(LINE_VERT_PATH, LINE_FRAG_PATH)
     {
         SetupBuffers();
     }
 
-    // the instance owns OpenGL resources: copies are not allowed
     LineRenderer(const LineRenderer&) = delete;
     LineRenderer& operator=(const LineRenderer&) = delete;
 
-    // destructor: we delete the buffers
     ~LineRenderer()
     {
         GL_CHECK(glDeleteVertexArrays(1, &VAO));
         GL_CHECK(glDeleteBuffers(1, &VBO));
     }
 
-    // we add a segment from a to b (two vertices with the same colour)
     void AddLine(const glm::vec3& a, const glm::vec3& b, const glm::vec3& color)
     {
         // the VBO is full: the segment is discarded
@@ -122,9 +109,7 @@ public:
     }
 
 private:
-    // capacity of the VBO (number of vertices)
     int maxVertices = 0;
-    // buffer objects\arrays of the lines
     GLuint VAO = 0, VBO = 0;
 
     // segments of the current frame (two vertices for each segment)
@@ -137,7 +122,6 @@ private:
         GL_CHECK(glGenVertexArrays(1, &VAO));
         GL_CHECK(glGenBuffers(1, &VBO));
 
-        // VAO is made "active"
         GL_CHECK(glBindVertexArray(VAO));
         // we allocate the VBO without data (nullptr): it is filled at every Draw
         GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, VBO));

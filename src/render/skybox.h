@@ -7,27 +7,14 @@ Skybox class
 
 #pragma once
 
-// Std. Includes
 #include <string>
-
-// Loader for OpenGL extensions
 #include <glad/glad.h>
-
-// Loader for GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-// classes to manage shaders and models
 #include <utils/shader.h>
 #include <utils/model.h>
-
-// class to manage OpenGL failures
 #include <render/gl_check.h>
-
-// texture loading functions
 #include <render/texture.h>
-
-// named constants of the application
 #include <core/config.h>
 
 /////////////////// SKYBOX class ///////////////////////
@@ -47,11 +34,9 @@ public:
         this->projectionLocation = glCheckUniformLocation(this->shader.Program, "projection");
     }
 
-    // the instance owns OpenGL resources: copies are not allowed
     Skybox(const Skybox&) = delete;
     Skybox& operator=(const Skybox&) = delete;
 
-    // destructor: we delete the Shader Program and the cubemap
     ~Skybox()
     {
         this->shader.Delete();
@@ -74,11 +59,9 @@ public:
         // rotation-only view matrix: removing the translation keeps the sky infinitely far away
         glm::mat4 skyView = glm::mat4(glm::mat3(view));
 
-        // we pass projection and view matrices to the Shader Program
         GL_CHECK(glUniformMatrix4fv(this->projectionLocation, 1, GL_FALSE, glm::value_ptr(projection)));
         GL_CHECK(glUniformMatrix4fv(this->viewLocation, 1, GL_FALSE, glm::value_ptr(skyView)));
 
-        // we render the skybox
         this->cube.Draw();
 
         // restore the default depth test for the next draws
@@ -90,6 +73,5 @@ private:
     Model cube;
     GLuint texture = 0;
 
-    // variables used to store uniform location inside shaders
     GLint samplerLocation, viewLocation, projectionLocation;
 };

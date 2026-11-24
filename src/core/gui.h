@@ -154,7 +154,7 @@ public:
 
             // content of the wall: inner frustum (cine camera) or outer frustum (fixed eye)
             int wallItem = (int)wall.GetContent();
-            if(ImGui::Combo("Wall Content", &wallItem, "Inner\0Outer\0\0"))
+            if(ImGui::Combo("Wall Content", &wallItem, "Inner\0Outer\0Inner + Outer\0\0"))
                 wall.SetContent((WALL_CONTENT)wallItem);
         }
 

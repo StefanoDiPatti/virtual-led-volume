@@ -30,13 +30,6 @@ LedWall class
 // named constants of the application
 #include <core/config.h>
 
-// content shown on the wall: the inner frustum (from the cine camera) or the outer frustum (from the fixed eye)
-enum class WALL_CONTENT
-{
-    INNER,
-    OUTER
-};
-
 /////////////////// LED WALL class ///////////////////////
 class LedWall
 {
@@ -87,11 +80,8 @@ public:
     // rendering of the wall quad, textured with the inner or the outer render target
     void Draw(const glm::mat4& view, const glm::mat4& projection)
     {
-        // texture shown on the wall, chosen in the GUI
-        GLuint texture = (this->content == WALL_CONTENT::OUTER) ? this->outerTarget.GetColorTexture() : this->target.GetColorTexture();
-
-        // the vertices are already in world coordinates
-        this->shader.Begin(glm::mat4(1.0f), view, projection, texture);
+        // the vertices are already in world coordinates; the shader chooses inner or outer per fragment
+        this->shader.Begin(glm::mat4(1.0f), view, projection, this->target.GetColorTexture(), this->outerTarget.GetColorTexture(), this->cameraViewProjection, this->content);
 
         GL_CHECK(glBindVertexArray(this->VAO));
         GL_CHECK(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0));
@@ -137,6 +127,8 @@ public:
     // content shown on the wall
     WALL_CONTENT GetContent() const        { return this->content; }
     void SetContent(WALL_CONTENT content)  { this->content = content; }
+    // the cine camera of the current frame
+    void SetCameraViewProjection(const glm::mat4& viewProjection) { this->cameraViewProjection = viewProjection; }
 
     // corners of the wall in world coordinates
     const glm::vec3& GetPa() const { return this->pa; }
@@ -152,9 +144,11 @@ private:
     OffAxisMatrices eyeMatrices;
     // off-axis view and projection from the fixed outer eye
     OffAxisMatrices outerEyeMatrices;
+    // projection * view of the cine camera: it decides which part of the wall is in the inner frustum
+    glm::mat4 cameraViewProjection = glm::mat4(1.0f);
 
     // content shown on the wall
-    WALL_CONTENT content = WALL_CONTENT::INNER;
+    WALL_CONTENT content = WALL_CONTENT::COMPOSITE;
 
     // off-screen target for the virtual environment (inner frustum)
     RenderTarget target;

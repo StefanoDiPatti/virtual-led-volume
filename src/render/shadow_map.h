@@ -7,18 +7,11 @@ ShadowMap class
 
 #pragma once
 
-// Loader for OpenGL extensions
 #include <glad/glad.h>
-
-// Loader for GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
 #include <iostream>
-
-// named constants of the application
 #include <core/config.h>
-// class to manage OpenGL failures
 #include <render/gl_check.h>
 
 /////////////////// SHADOWMAP class ///////////////////////
@@ -40,7 +33,6 @@ public:
         // we read exactly one texel, without interpolation between depths
         GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
         GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-        // outside the map we return the border colour
         GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER));
         GL_CHECK(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER));
 
@@ -67,7 +59,6 @@ public:
         GL_CHECK(glSamplerParameteri(this->hardwareSampler, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE));
         GL_CHECK(glSamplerParameteri(this->hardwareSampler, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL));
 
-        // FBO with the depth texture as depth attachment
         GL_CHECK(glGenFramebuffers(1, &this->FBO));
         GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, this->FBO));
         GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, this->depthTexture, 0));
@@ -79,11 +70,9 @@ public:
         if(framebufferStatus != GL_FRAMEBUFFER_COMPLETE)
             std::cerr << "FrameBuffer incomplete! Status: " << framebufferStatus << std::endl;
 
-        // we go back to the default framebuffer
         GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
     }
 
-    // the instance owns OpenGL resources: copies are not allowed
     ShadowMap(const ShadowMap&) = delete;
     ShadowMap& operator=(const ShadowMap&) = delete;
 
@@ -131,7 +120,6 @@ public:
 private:
 
     GLuint FBO = 0, depthTexture = 0, hardwareSampler = 0;
-    // resolution of the (square) shadow map
     int size = 0;
     glm::mat4 lightSpaceMatrix = glm::mat4(1.0f);
 };
