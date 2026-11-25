@@ -4,6 +4,12 @@ Real-time simulation of an LED wall for virtual production (in-camera VFX), writ
 
 Project for the course *Real-Time Graphics Programming*, Master Degree in Computer Science, Università degli Studi di Milano, a.y. 2025/2026.
 
+## Demo video
+
+[![Demo video](https://img.youtube.com/vi/LGrRVepFdjE/hqdefault.jpg)](https://youtu.be/LGrRVepFdjE)
+
+https://youtu.be/LGrRVepFdjE
+
 ## Overview
 
 In a virtual production stage the background is not added in post-production: a virtual environment is displayed on a large LED wall behind the actors and filmed directly by the camera. For the background to look correct from the camera, the image on the wall must be rendered from the position of the tracked camera, so that the wall behaves like a window onto the virtual world and shows the right parallax.
@@ -13,16 +19,20 @@ The application simulates this setup:
 - the virtual environment is rendered into a render target (FBO) mapped on a 6 x 3 m LED wall, using an **off-axis (generalized) perspective projection** computed from the position of the **cine camera**;
 - the cine camera films the stage (floor, subject and wall) as a real camera would, with physical focal length and sensor size;
 - an **observer camera** shows the whole stage from outside, with debug lines for the frustums and the wall;
+- as on a real stage, only the area seen by the camera (**inner frustum**) follows it; the rest of the wall (**outer frustum**) shows a low resolution image rendered from a fixed point and also lights the stage;
 - the stage is lit by a directional **set light** with Blinn-Phong shading and **shadow mapping**, while the virtual environment has its own independent light.
 
 ## Features
 
 - Off-axis projection (Kooima's generalized perspective projection) from the cine camera position; the environment is rendered into a 2048 x 1024 FBO shown on the wall
+- Inner and outer frustum on the wall: the inner frustum (cine camera frame plus overscan) is blended with a soft edge over a 512 x 256 outer frustum rendered from a fixed eye at the centre of the stage
+- Wall as a light source: the average colour of the outer frustum (last mipmap level of its texture) lights the stage along the wall normal, with adjustable weight
+- LED panel look: one LED per texel drawn as a disc on a black grid, with gain that keeps the average brightness; it produces moire when the camera is far from the wall
 - Cine camera with focal length 18-50 mm, Full Frame (36 x 24 mm) and Super 35 (24.89 x 18.66 mm) sensors, letterbox
 - Observer camera with debug lines: cine camera frustum (cyan), off-axis frustum (magenta), wall frame (yellow), world axes and camera gizmo
 - Five views, including a ground truth view and a difference view (black where the wall image matches the direct view)
 - Shadow mapping from the set light: no bias, slope-scaled bias, 3x3 PCF and hardware PCF (`sampler2DShadow`)
-- Parameter panel (Dear ImGui) for cameras, views, lights, shadow mode and debug lines, with frame time
+- Parameter panel (Dear ImGui) for cameras, views, wall content, LED panel, lights, shadow mode and debug lines, with frame time
 - CPU unit tests of the off-axis projection matrix
 
 ## Requirements
@@ -69,11 +79,11 @@ The executable must be run from the repository root, because shader and asset pa
 
 ## Rendering passes
 
-Each frame `src/main.cpp` runs three passes:
+Each frame `src/main.cpp` runs these passes:
 
 1. **Shadow pass**: floor and subject are rendered from the set light into a 2048 x 2048 depth texture (orthographic projection).
-2. **Wall pass**: the virtual environment is rendered into the wall FBO with the off-axis projection from the cine camera position.
-3. **Screen pass**: the selected view is rendered to the screen; the wall is a textured quad that shows the wall FBO, the stage uses the shadow map.
+2. **Wall passes**: the virtual environment is rendered into the inner frustum FBO with the off-axis projection from the cine camera position, and into the outer frustum FBO from the fixed eye; the average colour of the outer frustum becomes the wall light.
+3. **Screen pass**: the selected view is rendered to the screen; the wall is a textured quad that composes inner and outer frustum, the stage uses the shadow map and the wall light.
 
 ## Project structure
 
